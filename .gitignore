@@ -1,11 +1,63 @@
+# Python
 **/*.pyc
-/app/docker-compose-develop.yml
-db/src/test_src/chroma-env/
-transcription/subtitles/
-transcription/videos
-transcription/transcriptions/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
 transcription/venv/
+venv/
+.venv/
+env/
+db/src/test_src/chroma-env/
+
+# App & Database
+/app/docker-compose-develop.yml
+database/
+**/chroma-data/
+chroma-data/
+
+# Model Caches & Large Weights
+**/tfhub_cache/
+tfhub_cache/
+*.data-*
+*.pb
+*.index
+
+# Videos
+videos/
+**/videos/
+*.mp4
+*.mp3
+*.wav
+*.mkv
+*.avi
+*.mov
+*.webm
+*.flv
+*.m3u8
+*.ts
+
+# Transcripts & Subtitles
+transcription/subtitles/
+transcription/transcriptions/
 transcription/processed_transcripts/
 transcription/translated_transcriptions/
+**/subtitles/
+**/transcriptions/
+**/processed_transcripts/
+**/translated_transcriptions/
+*_transcript.json
+*transcript*.json
+*.srt
+*.vtt
+
+# Metadata
 transcription/metadata/
-database
+**/metadata/
+
+# OS artifacts
+.DS_Store
+Thumbs.db

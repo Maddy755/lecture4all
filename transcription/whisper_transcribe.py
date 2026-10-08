@@ -8,7 +8,7 @@ Author: w4a-backend
 Description: This script transcribes all videos in the video directory
 """
 
-def loadModel(model_size="openai/whisper-large-v2"):
+def loadModel(model_size="medium"):
     model = whisper_timestamped.load_model(model_size, device="cuda")
     return model
 

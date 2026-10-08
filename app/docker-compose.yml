@@ -19,10 +19,10 @@ services:
       - w4a-network
   
   chromadb:
-    image: chromadb/chroma:latest
+    image: chromadb/chroma:0.6.3
     container_name: chromadb
     volumes:
-      - ${DATABASE_PATH}:/chroma/chroma
+      - ${DATABASE_PATH}:/data
 #    env_file:
 #      - ./.env
     environment:
@@ -33,13 +33,7 @@ services:
       - "8100:8000"
     networks:
       - w4a-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ["0"] 
-              capabilities: [gpu]
+    
 
   w4a-app:
     image: "w4a"
@@ -48,10 +42,10 @@ services:
       context: ./
       dockerfile: Dockerfile
     ports:
-      - "6000:5000"
+      - "8080:5000"
     volumes:
       - ./:/app
-      - /srv/docker/geislinger-lecture4all/lecture4all/transcription:/transcription
+      - ../transcription:/transcription
     networks:
       - w4a-network
     entrypoint: ./entrypoint.sh

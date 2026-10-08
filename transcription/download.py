@@ -10,8 +10,8 @@ Description: Script to download videos from lecture2go links.
 """
 
 def extract_m3u8_from_script(html):
-    # Regex to find the src value in initVideoPlayer
-    match = re.search(r'initVideoPlayer\(.*?\[\{"src":"(https?://[^"]+\.m3u8)"', html, re.DOTALL)
+    start = html.find("initVideoPlayer")
+    match = re.search(r'(https?://[^"\s\\]+\.m3u8)', html[start:] if start != -1 else html)
     if match:
         return match.group(1)
     return None

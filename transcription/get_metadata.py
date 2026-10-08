@@ -15,7 +15,8 @@ def get_m3u8_link(video_url):
     if resp.status_code != 200:
         print(f"Failed to fetch {video_url}")
         return None
-    match = re.search(r'initVideoPlayer\(.*?\[\{"src":"(https?://[^"]+\.m3u8)"', resp.text, re.DOTALL)
+    start = resp.text.find("initVideoPlayer")
+    match = re.search(r'(https?://[^"\s\\]+\.m3u8)', resp.text[start:] if start != -1 else resp.text)
     if match:
         return match.group(1)
     print(f"Fehler beim Abrufen des m3u8-Links: No m3u8 found in {video_url}")
