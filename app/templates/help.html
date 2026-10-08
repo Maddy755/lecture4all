@@ -1,14 +1,64 @@
 {% extends "base.html" %}
 
-{% block title %}Lecture4All - Help{% endblock %}
+{% block title %}Lecture4All - Help & Guidance{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="text-box p-3">
-        <h2 class="mb-4">Help</h2>
-        <p class="mb-3">Lecturer4All hilft dir, Erklärungen in Lecture2Go Videos zu finden. 
-            Navigiere zur Startseite, gib deine Frage ein und erhalte passende Erklärungen. Mit dem Shorts Toggle kannst du wählen, ob du erstmal eine Übersicht an Shorts siehst, um das passende Video auszuwählen. Deine Frage kannst du via Keyboard Input oder Spracheingabe stellen.</p>
-        <p>Wenn du Fragen zum Projekt hast, kannst du dich an viktoria.wrobel@studium.uni-hamburg.de wenden.</p>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            <div class="card border shadow-sm p-4 p-md-5 bg-white rounded-3">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-3 small">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Help</li>
+                    </ol>
+                </nav>
+
+                <h1 class="h3 fw-bold mb-3">Help & Guidance</h1>
+                <p class="text-muted mb-4 lead fs-6">
+                    Lecture4All enables you to search within Dutch educational lecture videos using translated queries in <strong>Tamil (தமிழ்)</strong>, <strong>Malayalam (മലയാളം)</strong>, and <strong>Hindi (हिन्दी)</strong>, jumping straight to relevant timestamps.
+                </p>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 border rounded h-100 bg-light">
+                            <h5 class="h6 fw-bold mb-2">🇳🇱 &rarr; 🌐 1. Translation Workflow</h5>
+                            <p class="small text-muted mb-0">
+                                Lectures originate in <strong>Nederlands (Dutch)</strong>. The system transcribes and translates the content into your selected target language (Tamil, Malayalam, or Hindi).
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 border rounded h-100 bg-light">
+                            <h5 class="h6 fw-bold mb-2">🎯 2. Choosing Target Language</h5>
+                            <p class="small text-muted mb-0">
+                                In the header, select your target language: <strong>தமிழ்</strong>, <strong>മലയാളം</strong>, or <strong>हिन्दी</strong>. The search placeholder and sample queries will automatically align with your selection.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 border rounded h-100 bg-light">
+                            <h5 class="h6 fw-bold mb-2">⏱️ 3. Jumping to Timestamps</h5>
+                            <p class="small text-muted mb-0">
+                                Click on any matching result or specific timestamp badge (e.g. <code>⏱ 04:15</code>) to open the player and immediately start playback at the exact explanation segment.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 border rounded h-100 bg-light">
+                            <h5 class="h6 fw-bold mb-2">🎙️ 4. Voice Search</h5>
+                            <p class="small text-muted mb-0">
+                                Click the microphone icon next to the search bar. The speech recognizer listens in your selected target language (Tamil, Malayalam, or Hindi).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-top pt-3 text-muted small">
+                    <p class="mb-0">For questions, feedback, or support regarding Lecture4All, reach out to the project team.</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

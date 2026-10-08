@@ -1,25 +1,30 @@
 <!DOCTYPE html>
-<!--base.html is a template file that defines a common structure for your web pages, 
-so you don’t have to repeat code across multiple files. It typically includes the HTML skeleton, 
-navigation, and footer, and uses Jinja2 templating to allow other pages to extend it.-->
-<html lang="en">
+<html lang="en" class="notranslate" translate="no">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Lecture4All{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <!-- bootstrap zeugs-->
+    <title>{% block title %}Lecture4All - Dutch Lecture Translation & Timestamp Search{% endblock %}</title>
+    <!-- Google Fonts for Unicode Tamil, Malayalam, Devanagari (Hindi), and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Application Style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/x-icon">
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='i18n.js') }}" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='script.js') }}" charset="utf-8"></script>
 </head>
-<body>
-    <div class="tilted-square-background">
-    {% include "topnav.html" %}
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+<body class="lecture-app-body">
+    <div class="app-layout-wrapper">
+        {% include "topnav.html" %}
+        <main class="main-content-area" id="mainContent">
+            {% block content %}{% endblock %}
+        </main>
     </div>
 </body>
 </html>

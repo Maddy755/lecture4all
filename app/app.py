@@ -15,6 +15,7 @@ app = Flask(__name__, template_folder='templates')
 app.secret_key = 'secret_key'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # # ─── Record start time for every incoming request ───────────────────────────────
 # @app.before_request

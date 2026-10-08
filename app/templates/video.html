@@ -1,97 +1,192 @@
 {% extends "base.html" %}
 
-{% block title %}Lecture4All - {{ video_id }}{% endblock %}
+{% block title %}Lecture4All - {{ video_id if video_id else 'Lecture Player' }}{% endblock %}
 
 {% block content %}
-<style>
-</style>
-<div class="row p-lg-5">
-    <div class="col-12 col-lg-9 p-0">
-        <div class="video-container">
-            <video id="custom-video" playsinline webkit-playsinline src=""></video>
-            <div class="controls-timeline">
-                <div id="range+timestamps" style="position: relative; margin: 0 0.5rem;">
-                    <input type="range" id="seek-bar" value="0">
-                </div>
-                <div class="controls d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <button id="play-pause-btn"><img id="playIcon" src="{{ url_for('static', filename='images/play.svg') }}" alt="Play-Button" style="height: 16px;"></button>
-                        <p class="m-0 ms-1 p-0" style="color: white; font-size: 0.75rem;" id="videozeit">0:00 / 0:00</p>
-                    </div>
-                    <div class="d-flex justify-content-between" id="controlIcons"> <!-- volume + leiste & fullscreen rechts -->
-                        <button class="subtitle-btn d-flex align-items-center justify-content-center">
-                            <img id="subIcon" src="{{ url_for('static', filename='images/subtitles.svg') }}" alt="Subtitles-Button" style="height: 18px;">
-                            <span class="underline"></span>
-                            <div id="settings-menu" class="settings-menu" style="display: none;">
-                                <div class="settings-menu-item">
-                                    <label>Untertitel-Sprache</label>
-                                    <select id="subtitle-language">
-                                        <option value="en">Englisch</option>
-                                        <option value="de">Deutsch</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </button>
-                        <div class="d-flex justify-content-center align-items-center" style="min-width: 4rem;">  <!-- volume + leiste -->
-                            <button class="d-flex align-items-center" id="mute-unmute-btn"><img id="volumeIcon" src="{{ url_for('static', filename='images/volume-full.svg') }}" alt="Volume-Button" style="height: 16px;"></button>
-                            <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="1">
+<div class="video-page-wrapper container-fluid px-lg-5 py-4">
+    <!-- Breadcrumb & Top Controls -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="javascript:history.back()">&larr; Back to Results</a></li>
+                <li class="breadcrumb-item active" aria-current="page" id="breadcrumbVideoTitle">Lecture Player</li>
+            </ol>
+        </nav>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-secondary border">Source: Nederlands</span>
+            <div class="video-id-badge font-monospace small text-muted">
+                Video ID: <span id="displayVideoId">{{ video_id if video_id else 'N/A' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State: When no lecture is selected / found -->
+    <div id="noLectureState" class="empty-lecture-card text-center py-5 px-4 my-4 bg-white rounded border" style="display: none;">
+        <div class="empty-state-icon mb-3">🎬</div>
+        <h3 class="h4 mb-2">No lecture selected</h3>
+        <p class="text-muted mb-4 max-w-md mx-auto">
+            Select a lecture from the search results to start exploring exact video timestamps, or start a new query.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Return to Search</a>
+        </div>
+    </div>
+
+    <!-- Main Player & Timestamps Layout -->
+    <div id="lecturePlayerContainer" class="row g-4">
+        <!-- Left: Video Player & Lecture Meta -->
+        <div class="col-12 col-xl-8 col-lg-7">
+            <div class="video-player-surface rounded overflow-hidden shadow-sm border bg-black position-relative">
+                <div class="video-container">
+                    <video id="custom-video" playsinline webkit-playsinline src="" poster=""></video>
+                    
+                    <div class="controls-timeline">
+                        <div id="range+timestamps" class="timeline-seek-wrapper">
+                            <input type="range" id="seek-bar" value="0" min="0" max="100" step="0.1" aria-label="Video scrubber">
                         </div>
-                        <button id="fullscreen-btn">⛶</button>
+                        <div class="controls d-flex justify-content-between align-items-center px-3 py-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <button id="play-pause-btn" class="player-ctrl-btn" type="button" aria-label="Play or Pause">
+                                    <img id="playIcon" src="{{ url_for('static', filename='images/play.svg') }}" alt="Play" style="height: 16px;">
+                                </button>
+                                <span class="time-display text-white font-monospace small" id="videozeit">0:00 / 0:00</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-3" id="controlIcons">
+                                <!-- Subtitles Menu -->
+                                <div class="position-relative">
+                                    <button class="subtitle-btn player-ctrl-btn d-flex align-items-center justify-content-center" type="button" aria-label="Subtitles">
+                                        <img id="subIcon" src="{{ url_for('static', filename='images/subtitles.svg') }}" alt="Subtitles" style="height: 18px;">
+                                        <span class="underline"></span>
+                                    </button>
+                                    <div id="settings-menu" class="settings-menu shadow" style="display: none;">
+                                        <div class="settings-menu-item">
+                                            <label class="small text-white-50">Subtitles</label>
+                                            <select id="subtitle-language" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                                <option value="en">English</option>
+                                                <option value="de">Nederlands / Deutsch</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Volume -->
+                                <div class="d-flex align-items-center gap-1 volume-control-wrap">
+                                    <button class="player-ctrl-btn" id="mute-unmute-btn" type="button" aria-label="Mute or Unmute">
+                                        <img id="volumeIcon" src="{{ url_for('static', filename='images/volume-full.svg') }}" alt="Volume" style="height: 16px;">
+                                    </button>
+                                    <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="1" aria-label="Volume">
+                                </div>
+
+                                <!-- Fullscreen -->
+                                <button id="fullscreen-btn" class="player-ctrl-btn fs-5" type="button" aria-label="Fullscreen">⛶</button>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Video Metadata Card -->
+            <div class="video-meta-card card mt-3 p-4 border shadow-sm">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                    <h1 class="h4 card-title mb-0 text-dark fw-bold" id="title">Loading Lecture...</h1>
+                </div>
+                <div class="d-flex flex-wrap align-items-center text-muted small gap-3 pt-2 border-top mt-2">
+                    <span class="badge bg-light text-secondary border">Original Audio: Nederlands</span>
+                    <p class="mb-0" id="speaker+date"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Relevant Timestamps & Transcripts Panel -->
+        <div class="col-12 col-xl-4 col-lg-5">
+            <div class="transcript-playlist-card card border shadow-sm h-100">
+                <div class="card-header bg-white border-bottom p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h2 class="h6 mb-0 fw-bold d-flex align-items-center gap-2">
+                            <span>⏱️</span>
+                            <span>Relevant Timestamps</span>
+                        </h2>
+                        <span class="badge bg-primary text-white rounded-pill px-2 py-1 small" id="timestampsCountBadge">0</span>
+                    </div>
+                    <!-- Clearly distinguish Original Dutch vs Target Indic Transcript -->
+                    <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                        <span class="badge bg-light text-secondary border">Original: Nederlands</span>
+                        <span class="badge bg-dark text-white font-monospace small" id="transcriptTargetBadge">
+                            Translated Transcript
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Scrollable Timestamps List -->
+                <div class="timestamps-container flex-grow-1 overflow-y-auto" id="timestampPlaylist">
+                    <!-- Populated dynamically by video.js -->
                 </div>
             </div>
         </div>
     </div>
-    <div class="col overflow-x-hidden ms-1 timestamps-container" id="timestampPlaylist">
-            <div class="row border-bottom p-3">
-                <h5>Relevante Timestamps</h5>
-            </div>
-    </div>
-    <div class="col-12 col-lg-9 p-4 pt-2 p-lg-0 pt-lg-2 ">
-        <h3 id="title"></h3>
-            <div class="d-flex justify-content-between" style="width: 100%;">
-                <p style="color:var(--darkGray)" id="speaker+date"></p>
-                <img id="questionmark" src="{{ url_for('static', filename='images/questionmark.svg') }}" alt="Search" title="hier kannst du scrollen" style="height: 20px;">
+
+    <!-- Bottom: Other Matching Lectures -->
+    <div class="other-lectures-section mt-5 pt-4 border-top" id="otherLecturesContainer">
+        <h3 class="h5 mb-3 fw-bold">Other Matching Lectures</h3>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3" id="searchResultsParent">
         </div>
     </div>
 </div>
-<div class="container-fluid m-lg-3">
-    <div class="row" id="searchResultsParent">
-    </div>
-</div>
-<script>
-</script>
+
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
-    // Hier funktionen die Flask brauchen
-    function getVideo()
-    {
-        const jsonString = sessionStorage.getItem('json');
-        let videos = JSON.parse(jsonString); 
-        let thisVideo = null;
+    const CURRENT_URL_VIDEO_ID = "{{ video_id }}";
 
-        for(let i = 0; i < videos.length; i++)
-        {
-            if(videos[i].video_id == "{{ video_id }}")
-            {
-                thisVideo = videos[i]; // grab current video
-            } else {
-                document.getElementById('searchResultsParent').appendChild(createVideoCard(videos[i], "{{ url_for('video') }}"+`?video_id=${videos[i].video_id}`)); // list other videos
+    function getVideo() {
+        const jsonString = sessionStorage.getItem('json');
+        let videos = [];
+        try {
+            if (jsonString) videos = JSON.parse(jsonString);
+        } catch(e) {
+            console.warn("Could not parse session videos JSON", e);
+        }
+
+        let thisVideo = null;
+        const otherVideosParent = document.getElementById('searchResultsParent');
+
+        if (Array.isArray(videos) && videos.length > 0) {
+            for (let i = 0; i < videos.length; i++) {
+                if (String(videos[i].video_id) === String(CURRENT_URL_VIDEO_ID)) {
+                    thisVideo = videos[i];
+                } else if (otherVideosParent) {
+                    otherVideosParent.appendChild(createVideoCard(videos[i], "{{ url_for('video') }}" + `?video_id=${videos[i].video_id}`));
+                }
             }
         }
+
+        // Fallback video descriptor so player runs even on direct URL access
+        if (!thisVideo && CURRENT_URL_VIDEO_ID) {
+            thisVideo = {
+                video_id: CURRENT_URL_VIDEO_ID,
+                title: "Lecture " + CURRENT_URL_VIDEO_ID,
+                speaker: "Educational Lecture",
+                date: "Lecture2Go",
+                m3u8_url: `https://lecture2go.uni-hamburg.de/hls/${CURRENT_URL_VIDEO_ID}.mp4.m3u8`,
+                thumbnail_url: `https://lecture2go.uni-hamburg.de/images/${CURRENT_URL_VIDEO_ID}.jpg`,
+                ger_sub: `/transcription/subtitles/${CURRENT_URL_VIDEO_ID}_subtitles_de.srt`,
+                eng_sub: `/transcription/subtitles/${CURRENT_URL_VIDEO_ID}_subtitles.srt`,
+                chunks: []
+            };
+        }
+
         return thisVideo;
     }
-    function getLinks()
-    {
-        const linkList = [
+
+    function getLinks() {
+        return [
             "{{ url_for('static', filename='images/volume-muted.svg') }}",
             "{{ url_for('static', filename='images/volume-full.svg') }}",
             "{{ url_for('static', filename='images/cross.svg') }}",
             "{{ url_for('static', filename='images/play.svg') }}",
             "{{ url_for('static', filename='images/pause.svg') }}"
         ];
-        return linkList;
     }
 </script>
-<script src="{{ url_for('static', filename='video.js') }}"></script>;
+<script src="{{ url_for('static', filename='video.js') }}"></script>
 {% endblock %}

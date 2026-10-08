@@ -4,295 +4,391 @@ const seekBar = document.getElementById('seek-bar');
 const muteUnmuteBtn = document.getElementById('mute-unmute-btn');
 const volumeBar = document.getElementById('volume-bar');
 const fullscreenBtn = document.getElementById('fullscreen-btn');
-const linkList = getLinks();
+const linkList = typeof getLinks === 'function' ? getLinks() : [];
 const MUTE = 0;
 const LOUD = 1;
 const CROSS = 2;
 const PLAY = 3;
 const PAUSE = 4;
 
-const thisVideo = getVideo();
+const thisVideo = typeof getVideo === 'function' ? getVideo() : null;
 
-function changeSrc(videoUrl) 
-{
-    if (customVideo.canPlayType('application/vnd.apple.mpegurl')) {
-        customVideo.src = videoUrl;
-    } else if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(videoUrl);
-        hls.attachMedia(customVideo);
-        hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            // auszuführen wenn geladen evtl loadedmetadata hier rein
-        });
-    } else {
-        alert('Dein Browser unterstützt leider keine Wiedergabe von HLS-Streams.');
-    }
+// Graceful Empty State Handling
+if (!thisVideo) {
+    const noLecture = document.getElementById('noLectureState');
+    const playerContainer = document.getElementById('lecturePlayerContainer');
+    const breadcrumbTitle = document.getElementById('breadcrumbVideoTitle');
+    if (noLecture) noLecture.style.display = 'block';
+    if (playerContainer) playerContainer.style.display = 'none';
+    if (breadcrumbTitle) breadcrumbTitle.textContent = 'No Lecture Selected';
+} else {
+    initVideoPage();
 }
 
-const chunks = thisVideo.chunks;
-changeSrc(thisVideo.m3u8_url);
-customVideo.poster = thisVideo.thumbnail_url;
-loadSubtitles();
-document.getElementById('title').innerHTML = thisVideo.title;
-document.getElementById('speaker+date').innerHTML = thisVideo.speaker + "<br>" + thisVideo.date;
-
-// Create lists for texts times and ends of chunks
-const texts = chunks.map(chunk => chunk.text);
-const times = chunks.map(chunk => chunk.start);
-const ends = chunks.map(chunk => chunk.end);
-
-
-// Sideboard fly in
-let currentSideboard = null;
-let currentSideboardTimestamp = 0;
-let closechunk = true;
-
-function timestampDesc(time, text) {
-    const sideboard = document.createElement("div");
-    sideboard.className = "sideboardChunk";
-    sideboard.innerHTML = `<button style="border: none; background: none;" onclick="closeChunk()"><img src="${linkList[CROSS]}" alt="exit" style="height: 32px; position: absolute; right: 1rem; top: 1rem;"></button>
-    <h3 style="line-height: 1.5;">Timestamp ${makeTimeString(time)}</h3> 
-    <p style="text-align: justify;">...${text}...</p>`;
-    if (currentSideboard != null) {
-        currentSideboard.style = "opacity: 0;";
-    }
-    currentSideboard = sideboard;
-    currentSideboardTimestamp = time;
-    closechunk = false;
-    sideboard.style.height = `${document.getElementById('timestampPlaylist').scrollHeight}px`;
-    console.log(document.getElementById('timestampPlaylist').scrollHeight);
-    document.getElementById('timestampPlaylist').appendChild(sideboard);
-}
-
-function closeChunk() {
-    closechunk = true;
-    currentSideboard.style = "right: -150%;";
-}
-
-function updateSidebar() {
-    if (currentSideboard == null) {
-        return;
-    }
-    if (Math.abs(customVideo.currentTime - currentSideboardTimestamp) > 10) {
-        currentSideboard.style = "right: -150%;";
-    } else if (closechunk == false) {
-        currentSideboard.style = "right: 0;";
-    }
-}
-// End Sideboard fly in
-
-// Play/Pause, Controls
-function pausePlay() {
-    if (customVideo.paused) {
-        customVideo.play();
-        document.getElementById('playIcon').src = `${linkList[PAUSE]}`;
-    } else {
-        customVideo.pause();
-        document.getElementById('playIcon').src = `${linkList[PLAY]}`;
-    }
-}
-function mute() {
-    customVideo.muted = true;
-    document.getElementById('volumeIcon').src = `${linkList[MUTE]}`;
-}
-
-function unmute() {
-    customVideo.muted = false;
-    document.getElementById('volumeIcon').src = `${linkList[LOUD]}`;
-}
-
-playPauseBtn.addEventListener('click', pausePlay);
-customVideo.addEventListener('click', pausePlay);
-document.addEventListener('keydown', (e) => {
-    if (e.code === "Space") {
-        pausePlay();
-    }
-});
-
-seekBar.style.setProperty('--progress', 0);
-seekBar.addEventListener('input', () => {
-    const time = (seekBar.value / 100) * customVideo.duration;
-    customVideo.currentTime = time;
-});
-
-let volumeBeforeMute = 1.0;
-muteUnmuteBtn.addEventListener('click', () => {
-    if (customVideo.muted) {
-        unmute();
-        volumeBar.value = volumeBeforeMute;
-    } else {
-        mute();
-        volumeBeforeMute = volumeBar.value;
-        volumeBar.value = 0;
-    }
-});
-volumeBar.addEventListener('input', () => {
-    customVideo.volume = volumeBar.value;
-    if (customVideo.volume > 0) {
-        unmute();
-    } else {
-        mute();
-    }
-});
-
-fullscreenBtn.addEventListener('click', () => {
-    var UserAgent = navigator.userAgent.toLowerCase();
-    if (UserAgent.search(/(iphone|ipod|opera mini|fennec|palm|blackberry|android|symbian|series60)/) > -1) {
-        customVideo.webkitEnterFullscreen(); // iOS-spezifische Methode
-    } 
-    // Auf Desktop: Standard-Fullscreen-API nutzen
-    else if (!document.fullscreenElement) {
-        customVideo.requestFullscreen();
-    } else {
-        document.exitFullscreen();
-    }
-});
-
-customVideo.addEventListener('loadedmetadata', () => {
-    // make timestamps
-    for (let i = 0; i < times.length; i++) {
-        const seekBarWidth = seekBar.clientWidth;
-        const timestamp = document.createElement("div");
-        timestamp.className = "timestamp";
-        let distance = times[i] / customVideo.duration;
-        timestamp.style.left = `${distance * (seekBarWidth - 12)}px`;
-
-        timestamp.addEventListener('click', () => {
-            customVideo.currentTime = times[i];
-            timestampDesc(times[i], texts[i]);
-        });
-        addListTimestamp(times[i], texts[i]);
-        document.getElementById('range+timestamps').appendChild(timestamp);
-    }
-    // Update Videoplaytime
-    document.getElementById('videozeit').innerHTML = `${makeTimeString(customVideo.currentTime)} / ${makeTimeString(customVideo.duration)}`;
-    customVideo.addEventListener('timeupdate', () => {
-        const value = (customVideo.currentTime / customVideo.duration) * 100;
-        seekBar.value = value;
-        updateSidebar();
-        const progress = (customVideo.currentTime / customVideo.duration) * 100;
-        seekBar.style.setProperty('--progress', `${progress}%`);
-        document.getElementById('videozeit').innerHTML = `${makeTimeString(customVideo.currentTime)} / ${makeTimeString(customVideo.duration)}`;
-    });
-});
-
-// Make Format 00:00 to 1:23:01
-function makeTimeString(time) {
-    const isoString = new Date(time * 1000).toISOString();
-    const hours = isoString.slice(11, 13);
-    const minutesAndSeconds = isoString.slice(14, 19);
-
-    if (hours === "00") {
-        return minutesAndSeconds;
-    } else {
-        return `${parseInt(hours, 10)}:${minutesAndSeconds}`;
-    }
-}
-
-// Adds timestamps to List
-function addListTimestamp(time, text) {
-    const listTimestamp = document.createElement("div");
-    listTimestamp.className = "timestamp-item d-flex justify-content-between align-items-center p-3 border-bottom";
-    listTimestamp.innerHTML = `
-        <div class="timestamp-text">${shortenTextIfNecessary(text, 50)}</div>
-        <div class="timestamp-time">${makeTimeString(time)}</div>
-    `;
-    listTimestamp.addEventListener('click', () => {
-        customVideo.currentTime = time;
-        timestampDesc(time, text);
-    });
-    document.querySelector('.timestamps-container').appendChild(listTimestamp);
-}
-
-const subtitleBtn = document.querySelector('.subtitle-btn');
-let subtitleTrack = customVideo.textTracks[0];
-
-const settingsMenu = document.getElementById('settings-menu');
-const subtitleLanguage = document.getElementById('subtitle-language');
-let menuTimeout;
-
-subtitleBtn.addEventListener('click', function(e) {
-    this.classList.toggle('active');
-    if (subtitleTrack.mode === 'showing') {
-        subtitleTrack.mode = 'hidden';
-        this.classList.remove('active');
-    } else {
-        subtitleTrack.mode = 'showing';
-        this.classList.add('active');
-        settingsMenu.style.display = settingsMenu.style.display === 'block' ? 'none' : 'block';
-        resetMenuTimeout();
-    }
-});
-settingsMenu.addEventListener('mouseover', function(e) {
-    e.stopPropagation();
-    resetMenuTimeout();
-});
-settingsMenu.addEventListener('click', function(e) {
-    e.stopPropagation();
-    resetMenuTimeout();
-});
-
-subtitleLanguage.addEventListener('click', function(e) {
-    e.stopPropagation();
-    resetMenuTimeout();
-});
-subtitleLanguage.addEventListener('change', function(e) {
-    switch (this.value) {
-        case 'de':
-            subtitleTrack.mode = 'hidden';
-            customVideo.innerHTML = `<track id="subtitleTrack" kind="subtitles" src="/api/convert_srt_to_vtt?srt_path=${thisVideo.ger_sub}" srclang="de" label="Deutsch">`
-            subtitleTrack = customVideo.textTracks[0];
-            subtitleBtn.click();
-            break;
-
-        case 'en':
-            subtitleTrack.mode = 'hidden';
-            customVideo.innerHTML = `<track id="subtitleTrack" kind="subtitles" src="/api/convert_srt_to_vtt?srt_path=${thisVideo.eng_sub}" srclang="en" label="English">`
-            subtitleTrack = customVideo.textTracks[0];
-            subtitleBtn.click();
-            break;
-    }
-});
-    
-function resetMenuTimeout() {
-    clearTimeout(menuTimeout);
-    menuTimeout = setTimeout(hideMenu, 4000); // 4000ms = nach 4 Sekunden schließen
-}
-function hideMenu() {
-    settingsMenu.style.display = 'none';
-}
-
-// Deutsch ausgrauen falls untertitel nicht verfügbar
-async function checkSubsAvailable() {
-    try {
-        const response = await fetch(`/api/convert_srt_to_vtt?srt_path=${thisVideo.ger_sub}`, {
-            method: 'HEAD'
-        });
-        if(!response.ok)
-        {
-            const germanOption = subtitleLanguage.querySelector('option[value="de"]');
-            germanOption.disabled = true;
+function initVideoPage() {
+    function changeSrc(videoUrl) {
+        if (!videoUrl) return;
+        if (customVideo.canPlayType('application/vnd.apple.mpegurl')) {
+            customVideo.src = videoUrl;
+        } else if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(videoUrl);
+            hls.attachMedia(customVideo);
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                // Stream manifest ready
+            });
+        } else {
+            console.warn('HLS stream reproduction might not be supported in this browser.');
         }
     }
-    catch(e){
-        //...
+
+    const chunks = Array.isArray(thisVideo.chunks) ? thisVideo.chunks : [];
+    if (thisVideo.m3u8_url) {
+        changeSrc(thisVideo.m3u8_url);
     }
-    try {
-        const response = await fetch(`/api/convert_srt_to_vtt?srt_path=${thisVideo.eng_sub}`, {
-            method: 'HEAD'
-        });
-        if(!response.ok)
-        {
-            const englishOption = subtitleLanguage.querySelector('option[value="en"]');
-            englishOption.disabled = true;
+    if (thisVideo.thumbnail_url) {
+        customVideo.poster = thisVideo.thumbnail_url;
+    }
+
+    loadSubtitles();
+
+    const titleEl = document.getElementById('title');
+    if (titleEl) titleEl.textContent = thisVideo.title || `Lecture ${thisVideo.video_id}`;
+
+    const breadcrumbTitle = document.getElementById('breadcrumbVideoTitle');
+    if (breadcrumbTitle) breadcrumbTitle.textContent = thisVideo.title || `Lecture ${thisVideo.video_id}`;
+
+    const speakerDateEl = document.getElementById('speaker+date');
+    if (speakerDateEl) {
+        let metaHtml = '';
+        if (thisVideo.speaker) {
+            metaHtml += `<span class="me-3"><strong>Speaker:</strong> ${thisVideo.speaker}</span>`;
+        }
+        if (thisVideo.date) {
+            metaHtml += `<span><strong>Date:</strong> ${thisVideo.date}</span>`;
+        }
+        speakerDateEl.innerHTML = metaHtml;
+    }
+
+    const countBadge = document.getElementById('timestampsCountBadge');
+    if (countBadge) countBadge.textContent = chunks.length;
+
+    // Create lists for texts, start times, and end times
+    const texts = chunks.map(chunk => chunk.text);
+    const times = chunks.map(chunk => chunk.start);
+    const ends = chunks.map(chunk => chunk.end);
+
+    // Sideboard fly in
+    let currentSideboard = null;
+    let currentSideboardTimestamp = 0;
+    let closechunk = true;
+
+    function timestampDesc(time, text) {
+        const sideboard = document.createElement("div");
+        sideboard.className = "sideboardChunk";
+        sideboard.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-primary font-monospace">⏱ Timestamp ${makeTimeString(time)}</span>
+                <button type="button" class="btn-close btn-close-white" aria-label="Close" onclick="closeChunk()"></button>
+            </div>
+            <p class="transcript-detail-text mb-0">&ldquo;${text}&rdquo;</p>
+        `;
+        if (currentSideboard != null) {
+            currentSideboard.style = "opacity: 0;";
+        }
+        currentSideboard = sideboard;
+        currentSideboardTimestamp = time;
+        closechunk = false;
+        const playlist = document.getElementById('timestampPlaylist');
+        if (playlist) {
+            playlist.appendChild(sideboard);
+            setTimeout(() => {
+                sideboard.style.right = "0";
+            }, 10);
         }
     }
-    catch(e){
-        //...
+
+    window.closeChunk = function () {
+        closechunk = true;
+        if (currentSideboard) {
+            currentSideboard.style.right = "-150%";
+        }
+    };
+
+    function updateSidebar() {
+        if (currentSideboard == null) return;
+        if (Math.abs(customVideo.currentTime - currentSideboardTimestamp) > 12) {
+            currentSideboard.style.right = "-150%";
+        } else if (closechunk === false) {
+            currentSideboard.style.right = "0";
+        }
+    }
+
+    // Play/Pause, Controls
+    function pausePlay() {
+        if (customVideo.paused) {
+            customVideo.play();
+            const playIcon = document.getElementById('playIcon');
+            if (playIcon && linkList[PAUSE]) playIcon.src = linkList[PAUSE];
+        } else {
+            customVideo.pause();
+            const playIcon = document.getElementById('playIcon');
+            if (playIcon && linkList[PLAY]) playIcon.src = linkList[PLAY];
+        }
+    }
+
+    function mute() {
+        customVideo.muted = true;
+        const volIcon = document.getElementById('volumeIcon');
+        if (volIcon && linkList[MUTE]) volIcon.src = linkList[MUTE];
+    }
+
+    function unmute() {
+        customVideo.muted = false;
+        const volIcon = document.getElementById('volumeIcon');
+        if (volIcon && linkList[LOUD]) volIcon.src = linkList[LOUD];
+    }
+
+    if (playPauseBtn) playPauseBtn.addEventListener('click', pausePlay);
+    if (customVideo) customVideo.addEventListener('click', pausePlay);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.code === "Space" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
+            e.preventDefault();
+            pausePlay();
+        }
+    });
+
+    if (seekBar) {
+        seekBar.style.setProperty('--progress', '0%');
+        seekBar.addEventListener('input', () => {
+            if (customVideo.duration) {
+                const time = (seekBar.value / 100) * customVideo.duration;
+                customVideo.currentTime = time;
+            }
+        });
+    }
+
+    let volumeBeforeMute = 1.0;
+    if (muteUnmuteBtn) {
+        muteUnmuteBtn.addEventListener('click', () => {
+            if (customVideo.muted) {
+                unmute();
+                if (volumeBar) volumeBar.value = volumeBeforeMute;
+            } else {
+                mute();
+                if (volumeBar) {
+                    volumeBeforeMute = volumeBar.value;
+                    volumeBar.value = 0;
+                }
+            }
+        });
+    }
+
+    if (volumeBar) {
+        volumeBar.addEventListener('input', () => {
+            customVideo.volume = volumeBar.value;
+            if (customVideo.volume > 0) {
+                unmute();
+            } else {
+                mute();
+            }
+        });
+    }
+
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', () => {
+            const userAgent = navigator.userAgent.toLowerCase();
+            if (userAgent.search(/(iphone|ipod|opera mini|fennec|palm|blackberry|android|symbian|series60)/) > -1 && customVideo.webkitEnterFullscreen) {
+                customVideo.webkitEnterFullscreen();
+            } else if (!document.fullscreenElement) {
+                if (customVideo.requestFullscreen) customVideo.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        });
+    }
+
+    // Active transcript highlighter
+    function highlightActiveSegment(currentTime) {
+        const items = document.querySelectorAll('.timestamp-item');
+        items.forEach(item => {
+            const start = parseFloat(item.getAttribute('data-start'));
+            const end = parseFloat(item.getAttribute('data-end'));
+            const activeTag = item.querySelector('.segment-active-tag');
+            if (currentTime >= start && currentTime <= end) {
+                item.classList.add('active-timestamp-segment');
+                if (activeTag) activeTag.style.display = 'inline-block';
+            } else {
+                item.classList.remove('active-timestamp-segment');
+                if (activeTag) activeTag.style.display = 'none';
+            }
+        });
+    }
+
+    // Loaded metadata: render markers and playlist
+    customVideo.addEventListener('loadedmetadata', () => {
+        const rangeContainer = document.getElementById('range+timestamps');
+
+        for (let i = 0; i < times.length; i++) {
+            if (rangeContainer && customVideo.duration) {
+                const seekBarWidth = seekBar ? seekBar.clientWidth : 200;
+                const timestampDot = document.createElement("div");
+                timestampDot.className = "timestamp";
+                const distance = times[i] / customVideo.duration;
+                timestampDot.style.left = `${distance * 100}%`;
+                timestampDot.title = `⏱ ${makeTimeString(times[i])}: ${texts[i]}`;
+
+                timestampDot.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    customVideo.currentTime = times[i];
+                    timestampDesc(times[i], texts[i]);
+                    highlightActiveSegment(times[i]);
+                });
+                rangeContainer.appendChild(timestampDot);
+            }
+            addListTimestamp(times[i], ends[i], texts[i], i);
+        }
+
+        // If URL has target timestamp 't', jump immediately
+        const urlParams = new URLSearchParams(window.location.search);
+        const tParam = parseFloat(urlParams.get('t'));
+        if (!isNaN(tParam) && tParam >= 0) {
+            customVideo.currentTime = tParam;
+            highlightActiveSegment(tParam);
+        }
+
+        // Update video playtime
+        const timeDisplay = document.getElementById('videozeit');
+        if (timeDisplay) {
+            timeDisplay.innerHTML = `${makeTimeString(customVideo.currentTime)} / ${makeTimeString(customVideo.duration)}`;
+        }
+
+        customVideo.addEventListener('timeupdate', () => {
+            if (customVideo.duration) {
+                const value = (customVideo.currentTime / customVideo.duration) * 100;
+                if (seekBar) {
+                    seekBar.value = value;
+                    seekBar.style.setProperty('--progress', `${value}%`);
+                }
+            }
+            updateSidebar();
+            highlightActiveSegment(customVideo.currentTime);
+            if (timeDisplay) {
+                timeDisplay.innerHTML = `${makeTimeString(customVideo.currentTime)} / ${makeTimeString(customVideo.duration)}`;
+            }
+        });
+    });
+
+    // Make Format 00:00 to 1:23:01
+    function makeTimeString(time) {
+        if (isNaN(time) || time === null) return "0:00";
+        const sec = Math.floor(time);
+        const hrs = Math.floor(sec / 3600);
+        const mins = Math.floor((sec % 3600) / 60);
+        const remainingSec = sec % 60;
+        const mm = String(mins).padStart(2, '0');
+        const ss = String(remainingSec).padStart(2, '0');
+        if (hrs > 0) {
+            return `${hrs}:${mm}:${ss}`;
+        }
+        return `${mins}:${ss}`;
+    }
+
+    // Adds timestamp item to playlist
+    function addListTimestamp(time, endTime, text, index) {
+        const playlist = document.getElementById('timestampPlaylist');
+        if (!playlist) return;
+
+        const listTimestamp = document.createElement("div");
+        listTimestamp.className = "timestamp-item p-3 border-bottom";
+        listTimestamp.id = `timestamp-item-${index}`;
+        listTimestamp.setAttribute('data-start', time);
+        listTimestamp.setAttribute('data-end', endTime || (time + 12));
+
+        listTimestamp.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace small px-2 py-1">
+                    ⏱ ${makeTimeString(time)}
+                </span>
+                <span class="segment-active-tag badge bg-success text-white small" style="display: none;">
+                    ▶ Playing
+                </span>
+            </div>
+            <div class="timestamp-text text-dark">${text}</div>
+        `;
+
+        listTimestamp.addEventListener('click', () => {
+            customVideo.currentTime = time;
+            if (customVideo.paused) customVideo.play();
+            timestampDesc(time, text);
+            highlightActiveSegment(time);
+        });
+
+        playlist.appendChild(listTimestamp);
+    }
+
+    // Subtitles handling
+    const subtitleBtn = document.querySelector('.subtitle-btn');
+    const settingsMenu = document.getElementById('settings-menu');
+    const subtitleLanguage = document.getElementById('subtitle-language');
+    let menuTimeout;
+
+    if (subtitleBtn && settingsMenu) {
+        subtitleBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            this.classList.toggle('active');
+            const track = customVideo.textTracks && customVideo.textTracks[0];
+            if (track) {
+                if (track.mode === 'showing') {
+                    track.mode = 'hidden';
+                    this.classList.remove('active');
+                } else {
+                    track.mode = 'showing';
+                    this.classList.add('active');
+                    settingsMenu.style.display = settingsMenu.style.display === 'block' ? 'none' : 'block';
+                    resetMenuTimeout();
+                }
+            } else {
+                settingsMenu.style.display = settingsMenu.style.display === 'block' ? 'none' : 'block';
+                resetMenuTimeout();
+            }
+        });
+
+        settingsMenu.addEventListener('mouseover', function (e) {
+            e.stopPropagation();
+            resetMenuTimeout();
+        });
+        settingsMenu.addEventListener('click', function (e) {
+            e.stopPropagation();
+            resetMenuTimeout();
+        });
+    }
+
+    if (subtitleLanguage) {
+        subtitleLanguage.addEventListener('change', function () {
+            const val = this.value;
+            const subPath = val === 'de' ? thisVideo.ger_sub : thisVideo.eng_sub;
+            const langLabel = val === 'de' ? 'Deutsch' : 'English';
+            customVideo.innerHTML = `<track id="subtitleTrack" kind="subtitles" src="/api/convert_srt_to_vtt?srt_path=${subPath}" srclang="${val}" label="${langLabel}">`;
+            if (customVideo.textTracks && customVideo.textTracks[0]) {
+                customVideo.textTracks[0].mode = 'showing';
+            }
+            if (settingsMenu) settingsMenu.style.display = 'none';
+        });
+    }
+
+    function resetMenuTimeout() {
+        clearTimeout(menuTimeout);
+        menuTimeout = setTimeout(hideMenu, 4000);
+    }
+    function hideMenu() {
+        if (settingsMenu) settingsMenu.style.display = 'none';
+    }
+
+    function loadSubtitles() {
+        if (thisVideo.eng_sub) {
+            customVideo.innerHTML = `<track id="subtitleTrack" kind="subtitles" src="/api/convert_srt_to_vtt?srt_path=${thisVideo.eng_sub}" srclang="en" label="English">`;
+        }
     }
 }
-checkSubsAvailable();
-function loadSubtitles() {
-    customVideo.innerHTML = `<track id="subtitleTrack" kind="subtitles" src="/api/convert_srt_to_vtt?srt_path=${thisVideo.eng_sub}" srclang="en" label="English">`
-}
-// pausePlay(); // Autostart
