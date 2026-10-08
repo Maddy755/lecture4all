@@ -34,6 +34,10 @@ def process_transcript(id):
         url = entry["url"]
         category = entry["category"]
         date = entry["date"]
+    with open(os.path.join(transcription_directory, filename), "r", encoding="utf-8") as f:
+        transcription = json.load(f)
+        detected_language = transcription.get("language", "en")
+
     processed_transcript = {
         "id": id,
         "title": title,
@@ -43,13 +47,12 @@ def process_transcript(id):
         "url": url,
         "m3u8": m3u8,
         "thumbnail": thumbnail,
+        "language": detected_language,
         "chunks": []
     }
     
-    with open(os.path.join(transcription_directory, filename), "r") as f:
-        transcription = json.load(f)
-        current_chunk = []
-        current_time = 0.0
+    current_chunk = []
+    current_time = 0.0
         chunk_length = 12.0
         chunk_start_time = 0.0
         

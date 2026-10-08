@@ -1,9 +1,10 @@
 import chromadb
 import json
+import os
 import tensorflow_text
 import tensorflow_hub as hub
 
-#model="all-mpnet-base-v2"
+os.environ["TFHUB_CACHE_DIR"] = "/db/src/tfhub_cache"
 
 class USEEmbeddingFunction:
     def __init__(self):

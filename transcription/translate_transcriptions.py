@@ -18,10 +18,17 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # (lang_code, model_name, model_type, src_lang, tgt_lang)
 # model_type: 'marian' or 'nllb'
 TARGET_LANGUAGES = [
-    ("ta", "facebook/nllb-200-distilled-600M", "nllb", "eng_Latn", "tam_Taml"),
+    ("ta", "facebook/nllb-200-distilled-600M", "nllb", None, "tam_Taml"),
     ("ml", "Helsinki-NLP/opus-mt-en-ml",       "marian", None, None),
     ("hi", "Helsinki-NLP/opus-mt-en-hi",       "marian", None, None),
 ]
+
+WHISPER_TO_NLLB = {
+    "en": "eng_Latn", "de": "deu_Latn", "fr": "fra_Latn", "es": "spa_Latn",
+    "it": "ita_Latn", "pt": "por_Latn", "ru": "rus_Cyrl", "zh": "zho_Hans",
+    "ja": "jpn_Jpan", "ko": "kor_Hang", "hi": "hin_Deva", "ta": "tam_Taml",
+    "ml": "mal_Mlym", "ar": "arb_Arab", "tr": "tur_Latn", "nl": "nld_Latn"
+}
 
 processed_dir = "./processed_transcripts"
 output_base_dir = "./translated_transcriptions"
@@ -96,6 +103,15 @@ def translate_transcript(transcript_id, tokenizer, model, lang_code, model_type=
 
     with open(input_path, "r", encoding="utf-8") as f:
         processed = json.load(f)
+
+    detected_lang = processed.get("language", "en")
+
+    if model_type == "marian" and detected_lang != "en":
+        print(f"Skipping marian translation for {filename}; source is not English ({detected_lang})")
+        return
+
+    if model_type == "nllb":
+        src_lang = WHISPER_TO_NLLB.get(detected_lang, "eng_Latn")
 
     chunks = processed.get("chunks", [])
     if not chunks:
