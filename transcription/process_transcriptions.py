@@ -1,99 +1,350 @@
 import json
 import os
-import sys
 
 """
-Author: w4a-backend
-Description: This script processes the transcriptions and metadata to create processed transcripts.
+Automatically processes Whisper transcripts into the format expected
+by the Lecture4All ChromaDB ingestion pipeline.
+
+Works with:
+    11058_transcript.json
+    hindi_cse_operations_transcript.json
+    tamil_cse_aiml_transcript.json
+    etc.
+
+No filenames or languages are hardcoded.
 """
 
-transcription_directory = "transcriptions"
-output_directory = "./processed_transcripts"
-os.makedirs(output_directory, exist_ok=True)
 
-def process_transcript(id):
-    metadata_filename = f"{id}_metadata.json"
-    metadata_path = os.path.join("metadata", metadata_filename)
-    filename = f"{id}_transcript.json"
-    if not os.path.exists(os.path.join(transcription_directory, filename)) or not os.path.exists(metadata_path):
-        print(f"Transcription or metadata file does not exist for {id}. Skipping...")
-        return
-    output_filename = os.path.join(output_directory, filename)
-    if os.path.exists(output_filename):
-        print(f"Skipping file as it already exists: {filename}")
-        return
-    id = filename.split("_")[0]
-    with open(metadata_path, "r") as metadata_file:
-        metadata = json.load(metadata_file)
-        speaker = title = category = date = url = m3u8 = thumbnail = None
-        entry = metadata[0]
-        speaker = entry["speaker"]
-        title = entry["title"]
-        m3u8 = entry["m3u8"]
-        thumbnail = entry["thumbnail"]
-        url = entry["url"]
-        category = entry["category"]
-        date = entry["date"]
-    with open(os.path.join(transcription_directory, filename), "r", encoding="utf-8") as f:
-        transcription = json.load(f)
-        detected_language = transcription.get("language", "en")
+TRANSCRIPTION_DIRECTORY = "./transcriptions"
+OUTPUT_DIRECTORY = "./processed_transcripts"
+
+CHUNK_LENGTH = 12.0
+
+
+def make_title(filename):
+
+    name = os.path.splitext(filename)[0]
+
+    # Remove the transcript suffix
+    if name.endswith("_transcript"):
+        name = name[:-11]
+
+    # Convert underscores to spaces
+    title = name.replace("_", " ")
+
+    return title.strip()
+
+
+def process_transcript(filename):
+
+    input_path = os.path.join(
+        TRANSCRIPTION_DIRECTORY,
+        filename
+    )
+
+    output_filename = filename
+
+    output_path = os.path.join(
+        OUTPUT_DIRECTORY,
+        output_filename
+    )
+
+    if os.path.exists(output_path):
+
+        print(
+            f"Skipping existing processed file: {filename}"
+        )
+
+        return False
+
+    try:
+
+        with open(
+            input_path,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            transcription = json.load(f)
+
+    except Exception as e:
+
+        print(
+            f"Could not read {filename}: {e}"
+        )
+
+        return False
+
+    # ---------------------------------------------------------
+    # Basic metadata
+    # ---------------------------------------------------------
+
+    base_name = os.path.splitext(filename)[0]
+
+    if base_name.endswith("_transcript"):
+        video_id = base_name[:-11]
+    else:
+        video_id = base_name
+
+    title = make_title(filename)
+
+    speaker = "Unknown"
+
+    category = "Local Video"
+
+    date = ""
+
+    url = ""
+
+    m3u8 = ""
+
+    thumbnail = ""
+
+    detected_language = transcription.get(
+        "language",
+        "unknown"
+    )
+
+    # ---------------------------------------------------------
+    # Build processed transcript
+    # ---------------------------------------------------------
 
     processed_transcript = {
-        "id": id,
+
+        "id": video_id,
+
         "title": title,
+
         "speaker": speaker,
+
         "category": category,
+
         "date": date,
+
         "url": url,
+
         "m3u8": m3u8,
+
         "thumbnail": thumbnail,
+
         "language": detected_language,
+
         "chunks": []
     }
-    
-    current_chunk = []
-    current_time = 0.0
-        chunk_length = 12.0
-        chunk_start_time = 0.0
-        
-        for segment in transcription.get("segments", []):
-            for word in segment.get("words", []):
-                word_start = word['start']
-                word_end = word['end']
-                word_text = word['text']
-                word_duration = word_end - word_start
 
-                if not current_chunk:
-                    chunk_start_time = word_start
-                
-                current_chunk.append(word_text)
-                current_time += word_duration
-                
-                # Check if the current chunk is over the target length
-                if current_time >= chunk_length:
-                    processed_transcript["chunks"].append({
-                        "text": " ".join(current_chunk),
-                        "start": chunk_start_time,
-                        "end": word_end
-                    })
-                    current_chunk = []
-                    current_time = 0.0
-        if current_chunk:
-            processed_transcript["chunks"].append({
-                "text": " ".join(current_chunk),
-                "start": chunk_start_time,
-                "end": segment['end']
-            })
-    with open(output_filename, "w") as output_file:
-        json.dump(processed_transcript, output_file, ensure_ascii=False, indent=4)
-    print(f"Processed file saved: {output_filename}")
+    # ---------------------------------------------------------
+    # Create approximately 12-second chunks
+    # ---------------------------------------------------------
+
+    current_chunk = []
+
+    chunk_start_time = None
+
+    last_word_end = None
+
+    current_duration = 0.0
+
+    segments = transcription.get(
+        "segments",
+        []
+    )
+
+    for segment in segments:
+
+        words = segment.get(
+            "words",
+            []
+        )
+
+        # Some Whisper output may not contain
+        # word-level timestamps.
+        if not words:
+
+            text = segment.get(
+                "text",
+                ""
+            ).strip()
+
+            if text:
+
+                processed_transcript["chunks"].append({
+
+                    "text": text,
+
+                    "start": segment.get(
+                        "start",
+                        0.0
+                    ),
+
+                    "end": segment.get(
+                        "end",
+                        0.0
+                    )
+                })
+
+            continue
+
+        for word in words:
+
+            word_start = word.get(
+                "start"
+            )
+
+            word_end = word.get(
+                "end"
+            )
+
+            word_text = word.get(
+                "text",
+                ""
+            ).strip()
+
+            if word_start is None or word_end is None:
+                continue
+
+            if not word_text:
+                continue
+
+            # Start a new chunk
+            if chunk_start_time is None:
+
+                chunk_start_time = word_start
+
+                current_duration = 0.0
+
+            word_duration = max(
+                0.0,
+                word_end - word_start
+            )
+
+            current_chunk.append(
+                word_text
+            )
+
+            current_duration += word_duration
+
+            last_word_end = word_end
+
+            # Finish approximately 12-second chunk
+            if current_duration >= CHUNK_LENGTH:
+
+                processed_transcript["chunks"].append({
+
+                    "text": " ".join(
+                        current_chunk
+                    ),
+
+                    "start": chunk_start_time,
+
+                    "end": last_word_end
+                })
+
+                current_chunk = []
+
+                chunk_start_time = None
+
+                current_duration = 0.0
+
+    # ---------------------------------------------------------
+    # Save remaining words
+    # ---------------------------------------------------------
+
+    if current_chunk:
+
+        processed_transcript["chunks"].append({
+
+            "text": " ".join(
+                current_chunk
+            ),
+
+            "start": chunk_start_time,
+
+            "end": last_word_end
+        })
+
+    # ---------------------------------------------------------
+    # Save
+    # ---------------------------------------------------------
+
+    with open(
+        output_path,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            processed_transcript,
+            f,
+            indent=4,
+            ensure_ascii=False
+        )
+
+    print()
+    print(f"Processed: {filename}")
+    print(f"Language : {detected_language}")
+    print(
+        f"Chunks   : "
+        f"{len(processed_transcript['chunks'])}"
+    )
+    print(
+        f"Saved    : {output_path}"
+    )
+
+    return True
+
+
+def main():
+
+    os.makedirs(
+        OUTPUT_DIRECTORY,
+        exist_ok=True
+    )
+
+    if not os.path.exists(
+        TRANSCRIPTION_DIRECTORY
+    ):
+
+        print(
+            "Transcription directory does not exist."
+        )
+
+        return
+
+    transcript_files = [
+
+        filename
+
+        for filename in os.listdir(
+            TRANSCRIPTION_DIRECTORY
+        )
+
+        if filename.endswith(
+            "_transcript.json"
+        )
+    ]
+
+    transcript_files.sort()
+
+    print(
+        f"Found {len(transcript_files)} "
+        f"transcript files."
+    )
+
+    processed_count = 0
+
+    for filename in transcript_files:
+
+        if process_transcript(filename):
+            processed_count += 1
+
+    print()
+    print("=" * 70)
+    print(
+        f"Processed {processed_count} new transcripts."
+    )
+    print("=" * 70)
+
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python process_transcriptions.py <start_index> <end_index>")
-    start_index = int(sys.argv[1])
-    end_index = int(sys.argv[2])
-    print(f"Processing transcriptions from {start_index} to {end_index}")
-    for i in range(start_index, end_index + 1):
-        print(f"Processing transcript {i}")
-        process_transcript(i)
+
+    main()

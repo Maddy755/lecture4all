@@ -1,47 +1,71 @@
 import os
-import sys
 import json
 import whisper_timestamped
 
 """
-Lecture4All batch video transcription
+Author: w4a-backend / modified for automatic multilingual transcription
 
-Processes all supported video files in ./videos
-and saves Whisper timestamped JSON files in ./transcriptions.
+Description:
+    Automatically discovers all supported media files in the videos directory,
+    lets Whisper detect the language, transcribes each file once, and saves
+    timestamped JSON transcripts.
+
+    No language is hardcoded.
+    No filenames are hardcoded.
+    Existing transcripts are not overwritten.
 """
 
-VIDEO_EXTENSIONS = (".mp4", ".webm", ".mkv", ".avi", ".mov")
+VIDEOS_DIRECTORY = "./videos"
+OUTPUT_DIRECTORY = "./transcriptions"
+
+SUPPORTED_EXTENSIONS = {
+    ".mp4",
+    ".webm",
+    ".mkv",
+    ".avi",
+    ".mov",
+    ".mp3",
+    ".wav",
+    ".m4a",
+}
 
 
-def loadModel(model_size="medium"):
+def load_model(model_size="medium"):
+    print(f"Loading Whisper model: {model_size}")
+
+    model = whisper_timestamped.load_model(
+        model_size,
+        device="cuda"
+    )
+
+    return model
+
+
+def transcribe_video(model, video_path):
     """
-    Use CUDA when available, otherwise CPU.
+    Whisper automatically detects the language.
+
+    No language is supplied here.
     """
-    try:
-        model = whisper_timestamped.load_model(model_size, device="cuda")
-        print("Whisper model loaded using CUDA.")
-        return model
-    except Exception as e:
-        print("CUDA unavailable. Falling back to CPU.")
-        print(f"CUDA error: {e}")
 
-        model = whisper_timestamped.load_model(model_size, device="cpu")
-        print("Whisper model loaded using CPU.")
-        return model
+    result = whisper_timestamped.transcribe(
+        model,
+        video_path
+    )
 
-
-def transcribeVideo(model, videoPath):
-    print(f"Transcribing: {videoPath}")
-    result = whisper_timestamped.transcribe(model, videoPath)
     return result
 
 
-def saveTranscription(result, output_json):
-    os.makedirs("transcriptions", exist_ok=True)
+def save_transcription(result, output_path):
 
-    output_path = os.path.join("transcriptions", output_json)
+    os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
 
-    with open(output_path, "w", encoding="utf-8") as f:
+    with open(
+        output_path,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
         json.dump(
             result,
             f,
@@ -49,75 +73,116 @@ def saveTranscription(result, output_json):
             ensure_ascii=False
         )
 
-    print(f"Saved: {output_path}")
+
+def get_video_files():
+
+    if not os.path.exists(VIDEOS_DIRECTORY):
+        print(f"Videos directory does not exist: {VIDEOS_DIRECTORY}")
+        return []
+
+    files = []
+
+    for filename in os.listdir(VIDEOS_DIRECTORY):
+
+        extension = os.path.splitext(filename)[1].lower()
+
+        if extension in SUPPORTED_EXTENSIONS:
+            files.append(filename)
+
+    files.sort()
+
+    return files
+
+
+def main():
+
+    os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
+
+    video_files = get_video_files()
+
+    if not video_files:
+        print("No supported media files found.")
+        return
+
+    print()
+    print("=" * 70)
+    print(f"Found {len(video_files)} media files")
+    print("=" * 70)
+
+    for filename in video_files:
+
+        video_path = os.path.join(
+            VIDEOS_DIRECTORY,
+            filename
+        )
+
+        filename_without_extension = os.path.splitext(
+            filename
+        )[0]
+
+        output_filename = (
+            f"{filename_without_extension}_transcript.json"
+        )
+
+        output_path = os.path.join(
+            OUTPUT_DIRECTORY,
+            output_filename
+        )
+
+        # Never overwrite an existing transcript
+        if os.path.exists(output_path):
+
+            print()
+            print(f"Skipping: {filename}")
+            print("Transcript already exists.")
+
+            continue
+
+        print()
+        print("=" * 70)
+        print(f"Processing: {filename}")
+        print("=" * 70)
+
+        try:
+
+            result = transcribe_video(
+                model,
+                video_path
+            )
+
+            detected_language = result.get(
+                "language",
+                "unknown"
+            )
+
+            print(
+                f"Detected language: {detected_language}"
+            )
+
+            save_transcription(
+                result,
+                output_path
+            )
+
+            print(
+                f"Saved: {output_filename}"
+            )
+
+        except Exception as e:
+
+            print()
+            print(f"ERROR processing: {filename}")
+            print(f"Error: {e}")
+            print("Continuing with next file...")
+
+    print()
+    print("=" * 70)
+    print("Transcription process complete.")
+    print("=" * 70)
 
 
 if __name__ == "__main__":
 
-    videos_directory = "./videos"
-    output_directory = "./transcriptions"
+    model = load_model()
 
-    # Check videos directory
-    if not os.path.exists(videos_directory):
-        print(f"Video directory does not exist: {videos_directory}")
-        sys.exit(1)
-
-    # Find all supported videos
-    video_files = [
-        f for f in os.listdir(videos_directory)
-        if f.lower().endswith(VIDEO_EXTENSIONS)
-    ]
-
-    video_files.sort()
-
-    print(f"Found {len(video_files)} video files.")
-
-    if len(video_files) == 0:
-        print("No supported videos found.")
-        sys.exit(0)
-
-    print("\nVideos to process:")
-    for video in video_files:
-        print(f"  - {video}")
-
-    print("\nLoading Whisper model...")
-    model = loadModel("medium")
-
-    os.makedirs(output_directory, exist_ok=True)
-
-    for filename in video_files:
-
-        video_path = os.path.join(videos_directory, filename)
-
-        # Preserve the video filename as the transcript name
-        video_name = os.path.splitext(filename)[0]
-        output_json = f"{video_name}_transcript.json"
-        output_path = os.path.join(output_directory, output_json)
-
-        # Don't retranscribe existing files
-        if os.path.exists(output_path):
-            print(
-                f"\nSkipping {filename} "
-                f"(transcription already exists)."
-            )
-            continue
-
-        print("\n" + "=" * 60)
-        print(f"Processing: {filename}")
-        print("=" * 60)
-
-        try:
-            result = transcribeVideo(model, video_path)
-
-            saveTranscription(
-                result,
-                output_json
-            )
-
-            print(f"Completed: {filename}")
-
-        except Exception as e:
-            print(f"ERROR processing {filename}: {e}")
-            print("Continuing with next video...")
-
-    print("\nAll videos processed.")
+    main()
