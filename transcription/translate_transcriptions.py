@@ -15,12 +15,10 @@ Usage: python translate_transcriptions.py <start_index> <end_index>
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# (lang_code, model_name, model_type, src_lang, tgt_lang)
-# model_type: 'marian' or 'nllb'
 TARGET_LANGUAGES = [
     ("ta", "facebook/nllb-200-distilled-600M", "nllb", None, "tam_Taml"),
-    ("ml", "Helsinki-NLP/opus-mt-en-ml",       "marian", None, None),
-    ("hi", "Helsinki-NLP/opus-mt-en-hi",       "marian", None, None),
+    ("ml", "facebook/nllb-200-distilled-600M", "nllb", None, "mal_Mlym"),
+    ("hi", "facebook/nllb-200-distilled-600M", "nllb", None, "hin_Deva"),
 ]
 
 WHISPER_TO_NLLB = {
@@ -106,6 +104,10 @@ def translate_transcript(transcript_id, tokenizer, model, lang_code, model_type=
 
     detected_lang = processed.get("language", "en")
 
+    if detected_lang == lang_code:
+        print(f"Skipping translation for {filename}; source is already in target language ({lang_code})")
+        return
+
     if model_type == "marian" and detected_lang != "en":
         print(f"Skipping marian translation for {filename}; source is not English ({detected_lang})")
         return
@@ -137,20 +139,49 @@ def translate_transcript(transcript_id, tokenizer, model, lang_code, model_type=
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         print("Usage: python translate_transcriptions.py <start_index> <end_index>")
+        print("   or: python translate_transcriptions.py all")
         sys.exit(1)
 
-    start_index = int(sys.argv[1])
-    end_index = int(sys.argv[2])
+    if sys.argv[1] == "all":
+        ids = []
+        if os.path.exists(processed_dir):
+            for f in sorted(os.listdir(processed_dir)):
+                if f.endswith("_transcript.json"):
+                    ids.append(f[:-16])
+        if not ids:
+            print(f"No processed transcripts found in {processed_dir}.")
+            sys.exit(0)
+    elif len(sys.argv) >= 3:
+        try:
+            start_index = int(sys.argv[1])
+            end_index = int(sys.argv[2])
+            ids = list(range(start_index, end_index + 1))
+        except ValueError:
+            ids = sys.argv[1:]
+    else:
+        ids = [sys.argv[1]]
+
+    current_model_key = None
+    tokenizer, model = None, None
 
     for lang_code, model_name, model_type, src_lang, tgt_lang in TARGET_LANGUAGES:
         print(f"\n=== Translating to '{lang_code}' using {model_name} ===")
-        tokenizer, model = load_model(model_name, model_type)
-        for i in range(start_index, end_index + 1):
-            print(f"Processing id={i}")
-            translate_transcript(i, tokenizer, model, lang_code, model_type, src_lang, tgt_lang)
-        # Free GPU memory between models
+        model_key = (model_name, model_type)
+        if model_key != current_model_key:
+            if model is not None:
+                del model
+                if DEVICE == "cuda":
+                    torch.cuda.empty_cache()
+            tokenizer, model = load_model(model_name, model_type)
+            current_model_key = model_key
+
+        for transcript_id in ids:
+            print(f"Processing id={transcript_id}")
+            translate_transcript(transcript_id, tokenizer, model, lang_code, model_type, src_lang, tgt_lang)
+
+    if model is not None:
         del model
         if DEVICE == "cuda":
             torch.cuda.empty_cache()
