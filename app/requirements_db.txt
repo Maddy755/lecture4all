@@ -3,3 +3,4 @@ flask
 tensorflow_text
 tensorflow_hub
 sentencepiece
+sentence-transformers==6.1.0

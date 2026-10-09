@@ -1,3 +1,6 @@
-debugpy
+chromadb==0.6.3
 flask
-requests
+tensorflow_text
+tensorflow_hub
+sentencepiece
+sentence-transformers==6.1.0
