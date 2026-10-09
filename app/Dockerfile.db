@@ -2,6 +2,5 @@ FROM tensorflow/tensorflow:latest
 
 WORKDIR /db
 
-RUN pip install --upgrade pip && \
-    pip3 install --no-deps tensorflow-text tensorflow-hub sentencepiece && \
-    pip3 install --ignore-installed blinker tf_keras chromadb==0.6.3 flask
+RUN pip install --no-cache-dir --no-deps tensorflow-text tensorflow-hub sentencepiece tf_keras && \
+    pip install --no-cache-dir --ignore-installed blinker flask chromadb==0.6.3
