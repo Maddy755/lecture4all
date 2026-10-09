@@ -1,11 +1,36 @@
 {% extends "base.html" %}
 
-{% block title %}Lecture4All - {{ query }}{% endblock %}
+{% block title %}Lecture4All - Search Results: {{ query }}{% endblock %}
 
 {% block content %}
-<div class="search-result-header">
-    <p>Deine Suchergebnisse für "{{ query }}" ({{ result_count }} Treffer):</p>
-</div>
-{% include "searchresults-only.html" %}
+<div class="search-results-page-wrapper">
+    <div class="container py-3">
+        <div class="results-meta-header d-flex flex-column flex-md-row justify-content-between align-items-md-center py-3 border-bottom mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 small">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Search Results</li>
+                    </ol>
+                </nav>
+                <h1 class="h4 mb-1 text-dark">
+                    Search results for &ldquo;<span class="notranslate" translate="no">{{ query }}</span>&rdquo; ({{ result_count }} matches)
+                </h1>
+                <p class="text-muted small mb-0">
+                    <span class="badge bg-dark text-white me-2">
+                        Nederlands &rarr; <span class="target-lang-name-display">Target Language</span>
+                    </span>
+                    <span>Matched against translated Dutch lecture transcripts using semantic vector search</span>
+                </p>
+            </div>
+            <div class="mt-2 mt-md-0 d-flex align-items-center gap-2">
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">
+                    &larr; New Search
+                </a>
+            </div>
+        </div>
+    </div>
 
+    {% include "searchresults-only.html" %}
+</div>
 {% endblock %}
