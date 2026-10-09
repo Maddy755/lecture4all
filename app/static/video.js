@@ -58,6 +58,14 @@ function initVideoPage() {
     const breadcrumbTitle = document.getElementById('breadcrumbVideoTitle');
     if (breadcrumbTitle) breadcrumbTitle.textContent = thisVideo.title || `Lecture ${thisVideo.video_id}`;
 
+    const langDisplay = thisVideo.language ? thisVideo.language : 'Multilingual';
+    const topBadge = document.getElementById('topVideoLangBadge');
+    if (topBadge) topBadge.textContent = `🌐 ${langDisplay} Lecture`;
+    const playerAudioBadge = document.getElementById('playerAudioLangBadge');
+    if (playerAudioBadge) playerAudioBadge.textContent = `Spoken Audio: ${langDisplay}`;
+    const sidebarAudioBadge = document.getElementById('sidebarAudioLangBadge');
+    if (sidebarAudioBadge) sidebarAudioBadge.textContent = `Audio: ${langDisplay}`;
+
     const speakerDateEl = document.getElementById('speaker+date');
     if (speakerDateEl) {
         let metaHtml = '';
@@ -368,9 +376,42 @@ function initVideoPage() {
     if (subtitleLanguage) {
         subtitleLanguage.addEventListener('change', function () {
             const val = this.value;
-            const subPath = val === 'de' ? thisVideo.ger_sub : thisVideo.eng_sub;
-            const langLabel = val === 'de' ? 'Deutsch' : 'English';
+            if (val === 'none') {
+                if (customVideo.textTracks && customVideo.textTracks[0]) {
+                    customVideo.textTracks[0].mode = 'hidden';
+                }
+                const track = customVideo.querySelector('track');
+                if (track) track.remove();
+                if (settingsMenu) settingsMenu.style.display = 'none';
+                return;
+            }
+
+            const labelMap = {
+                en: 'English',
+                nl: 'Nederlands',
+                ta: 'தமிழ்',
+                ml: 'മലയാളം',
+                hi: 'हिन्दी',
+                de: 'Deutsch'
+            };
+
+            let subPath = `/transcription/subtitles/${thisVideo.video_id}_subtitles_${val}.srt`;
+            if (val === 'en') {
+                subPath = thisVideo.eng_sub || `/transcription/subtitles/${thisVideo.video_id}_subtitles.srt`;
+            } else if (val === 'de') {
+                subPath = thisVideo.ger_sub || `/transcription/subtitles/${thisVideo.video_id}_subtitles_de.srt`;
+            }
+
+            const langLabel = labelMap[val] || val.toUpperCase();
             customVideo.innerHTML = `<track id="subtitleTrack" kind="subtitles" src="/api/convert_srt_to_vtt?srt_path=${subPath}" srclang="${val}" label="${langLabel}">`;
+            
+            const newTrackEl = customVideo.querySelector('track');
+            if (newTrackEl) {
+                newTrackEl.addEventListener('error', () => {
+                    console.info(`Subtitles for [${val}] not available for this lecture.`);
+                });
+            }
+
             if (customVideo.textTracks && customVideo.textTracks[0]) {
                 customVideo.textTracks[0].mode = 'showing';
             }
@@ -387,8 +428,14 @@ function initVideoPage() {
     }
 
     function loadSubtitles() {
-        if (thisVideo.eng_sub) {
-            customVideo.innerHTML = `<track id="subtitleTrack" kind="subtitles" src="/api/convert_srt_to_vtt?srt_path=${thisVideo.eng_sub}" srclang="en" label="English">`;
+        const defaultSub = thisVideo.eng_sub || `/transcription/subtitles/${thisVideo.video_id}_subtitles.srt`;
+        customVideo.innerHTML = `<track id="subtitleTrack" kind="subtitles" src="/api/convert_srt_to_vtt?srt_path=${defaultSub}" srclang="en" label="English">`;
+        const trackEl = customVideo.querySelector('track');
+        if (trackEl) {
+            trackEl.addEventListener('error', () => {
+                // Silently fallback if initial subtitle track is absent
+                console.info('Default subtitles not present for this lecture.');
+            });
         }
     }
 }

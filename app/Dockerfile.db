@@ -2,14 +2,6 @@ FROM tensorflow/tensorflow:latest
 
 WORKDIR /db
 
-COPY requirements_db.txt requirements_db.txt
-
-#COPY requirements_db_tf.txt requirements_db_tf.txt
-
-#RUN pip install --upgrade pip && pip3 install --no-deps -r requirements_db_tf.txt
-
-RUN pip install --upgrade pip && pip3 install --ignore-installed blinker -r requirements_db.txt
-
-#CMD ["python", "/db/src/db_env.py"]
-#CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=7001"]
-#CMD ["bash"]
+RUN pip install --upgrade pip && \
+    pip3 install --no-deps tensorflow-text tensorflow-hub sentencepiece && \
+    pip3 install --ignore-installed blinker tf_keras chromadb==0.6.3 flask

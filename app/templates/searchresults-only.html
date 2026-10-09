@@ -5,7 +5,7 @@
             <div class="empty-state-icon mb-3">🔍</div>
             <h3 class="h5 mb-2">No matching lecture segments found</h3>
             <p class="text-muted mb-4 max-w-md mx-auto">
-                Try searching with alternative translated keywords in your chosen target language (Tamil, Malayalam, or Hindi).
+                Try searching with alternative keywords in English, Dutch, Tamil, Malayalam, or Hindi.
             </p>
             <div class="d-flex justify-content-center gap-2">
                 <a href="{{ url_for('index') }}" class="btn btn-primary">Return to Search</a>
@@ -52,8 +52,8 @@
                                         </span>
                                     </div>
 
-                                    <!-- Metadata Row distinguishing Dutch source -->
-                                    <div class="lecture-meta-row text-muted small d-flex flex-wrap gap-3 mb-3">
+                                    <!-- Metadata Row with dynamic video language -->
+                                    <div class="lecture-meta-row text-muted small d-flex flex-wrap gap-3 mb-3 align-items-center">
                                         {% if video.speaker %}
                                         <span>
                                             <strong>Speaker:</strong> {{ video.speaker }}
@@ -65,19 +65,19 @@
                                         </span>
                                         {% endif %}
                                         <span class="badge bg-light text-secondary border">
-                                            Source: Nederlands
+                                            🌐 {{ video.language if video.language else 'Multilingual Video' }}
                                         </span>
                                         <span class="font-monospace text-secondary">
                                             ID: {{ video.video_id }}
                                         </span>
                                     </div>
 
-                                    <!-- Matching Translated Transcript Snippet -->
+                                    <!-- Matching Transcript Snippet -->
                                     {% if top_chunk %}
-                                    <div class="transcript-snippet-box p-3 rounded-1 mb-3">
+                                     <div class="transcript-snippet-box p-3 rounded-1 mb-3">
                                         <div class="snippet-header d-flex align-items-center justify-content-between mb-2">
                                             <span class="snippet-tag small fw-semibold text-dark">
-                                                Matched Translated Transcript Segment
+                                                Matched Speech Segment
                                             </span>
                                             <span class="badge bg-dark text-white font-monospace small px-2 py-1">
                                                 ⏱ <span class="format-seconds" data-seconds="{{ top_start }}"></span>

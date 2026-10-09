@@ -4,15 +4,15 @@
         <div class="spinner-grow text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
             <span class="visually-hidden">Loading...</span>
         </div>
-        <h4 class="h6 fw-bold mb-1" data-i18n="searchingMessage">விரிவுரை நேரமுத்திரைகளைத் தேடுகிறது...</h4>
-        <p class="text-muted small mb-0">Searching semantic vector embeddings across lecture transcripts</p>
+        <h4 class="h6 fw-bold mb-1" data-i18n="searchingMessage">Searching lecture timestamps...</h4>
+        <p class="text-muted small mb-0">Searching semantic vector embeddings across multilingual lecture transcripts</p>
     </div>
 </div>
 
 <!-- Multilingual Voice Search Modal -->
 <div id="audioPopup" class="loading-popup" role="dialog" aria-modal="true" aria-labelledby="voiceDialogTitle">
     <div class="audio-card shadow-lg p-4 bg-white rounded-4 text-center border max-w-sm">
-        <h3 id="voiceDialogTitle" class="h5 fw-bold mb-3" data-i18n="voiceListening">இப்போது பேசுங்கள்...</h3>
+        <h3 id="voiceDialogTitle" class="h5 fw-bold mb-3" data-i18n="voiceListening">Listening... Speak your query</h3>
         
         <div class="voice-pulse-container my-3">
             <button class="roundButton voice-active-btn" id="voiceDoneBtn" type="button" aria-label="Finish speaking">
@@ -20,13 +20,13 @@
             </button>
         </div>
 
-        <p class="text-muted small mb-3">Speak in தமிழ், മലയാളം, हिन्दी, or English</p>
+        <p class="text-muted small mb-3" id="voiceHintText" data-i18n="voiceHint">Speak in English, Nederlands, தமிழ், മലയാളം, or हिन्दी</p>
         
         <div class="d-flex justify-content-center gap-2">
             <button class="btn btn-outline-secondary btn-sm px-3" id="voiceCancelBtn" type="button" data-i18n="voiceCancel">
-                ரத்து செய்
+                Cancel
             </button>
-            <button class="btn btn-primary btn-sm px-3" id="schließen" type="button">
+            <button class="btn btn-primary btn-sm px-3" id="schließen" type="button" data-i18n="voiceDone">
                 Done
             </button>
         </div>

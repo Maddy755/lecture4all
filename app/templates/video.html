@@ -14,7 +14,7 @@
             </ol>
         </nav>
         <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-light text-secondary border">Source: Nederlands</span>
+            <span class="badge bg-light text-secondary border" id="topVideoLangBadge">🌐 Multilingual Lecture</span>
             <div class="video-id-badge font-monospace small text-muted">
                 Video ID: <span id="displayVideoId">{{ video_id if video_id else 'N/A' }}</span>
             </div>
@@ -63,8 +63,13 @@
                                         <div class="settings-menu-item">
                                             <label class="small text-white-50">Subtitles</label>
                                             <select id="subtitle-language" class="form-select form-select-sm bg-dark text-white border-secondary">
-                                                <option value="en">English</option>
-                                                <option value="de">Nederlands / Deutsch</option>
+                                                <option value="none">Off</option>
+                                                <option value="en" selected>English</option>
+                                                <option value="nl">Nederlands</option>
+                                                <option value="ta">தமிழ் (Tamil)</option>
+                                                <option value="ml">മലയാളം (Malayalam)</option>
+                                                <option value="hi">हिन्दी (Hindi)</option>
+                                                <option value="de">Deutsch</option>
                                             </select>
                                         </div>
                                     </div>
@@ -92,7 +97,7 @@
                     <h1 class="h4 card-title mb-0 text-dark fw-bold" id="title">Loading Lecture...</h1>
                 </div>
                 <div class="d-flex flex-wrap align-items-center text-muted small gap-3 pt-2 border-top mt-2">
-                    <span class="badge bg-light text-secondary border">Original Audio: Nederlands</span>
+                    <span class="badge bg-light text-secondary border" id="playerAudioLangBadge">Spoken Audio: Multilingual</span>
                     <p class="mb-0" id="speaker+date"></p>
                 </div>
             </div>
@@ -109,11 +114,11 @@
                         </h2>
                         <span class="badge bg-primary text-white rounded-pill px-2 py-1 small" id="timestampsCountBadge">0</span>
                     </div>
-                    <!-- Clearly distinguish Original Dutch vs Target Indic Transcript -->
+                    <!-- Language & Transcript Badges -->
                     <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
-                        <span class="badge bg-light text-secondary border">Original: Nederlands</span>
+                        <span class="badge bg-light text-secondary border" id="sidebarAudioLangBadge">Spoken Audio: Multilingual</span>
                         <span class="badge bg-dark text-white font-monospace small" id="transcriptTargetBadge">
-                            Translated Transcript
+                            Multilingual Transcript
                         </span>
                     </div>
                 </div>
@@ -167,6 +172,7 @@
                 title: "Lecture " + CURRENT_URL_VIDEO_ID,
                 speaker: "Educational Lecture",
                 date: "Lecture2Go",
+                language: "Multilingual",
                 m3u8_url: `https://lecture2go.uni-hamburg.de/hls/${CURRENT_URL_VIDEO_ID}.mp4.m3u8`,
                 thumbnail_url: `https://lecture2go.uni-hamburg.de/images/${CURRENT_URL_VIDEO_ID}.jpg`,
                 ger_sub: `/transcription/subtitles/${CURRENT_URL_VIDEO_ID}_subtitles_de.srt`,

@@ -7,12 +7,12 @@
     {% if not video_results or video_results|length == 0 %}
     <div class="empty-results-card text-center py-5 px-4 my-4 bg-white rounded border">
         <div class="empty-state-icon mb-3">🔍</div>
-        <h3 class="h5 mb-2" data-i18n="noResultsTitle">முடிவுகள் எதுவும் கிடைக்கவில்லை</h3>
+        <h3 class="h5 mb-2" data-i18n="noResultsTitle">No matching lecture segments found</h3>
         <p class="text-muted mb-4 max-w-md mx-auto" data-i18n="noResultsDesc">
-            வேறு தேடல் வார்த்தையைப் பயன்படுத்தவும் அல்லது தமிழ், மலையாளம், இந்தி மொழிகளில் பிற தலைப்புகளைத் தேடவும்.
+            Try searching with alternative keywords in English, Dutch, Tamil, Malayalam, or Hindi.
         </p>
         <div class="d-flex justify-content-center gap-2">
-            <a href="{{ url_for('index') }}" class="btn btn-primary" data-i18n="backToSearch">தேடலுக்குத் திரும்பு</a>
+            <a href="{{ url_for('index') }}" class="btn btn-primary" data-i18n="backToSearch">Return to Search</a>
         </div>
     </div>
     {% else %}
@@ -27,7 +27,7 @@
             </div>
             <a class="videobutton shadow-sm" id="videoButton" href="{{ url_for('video', video_id=video_results[0].video_id) }}">
                 <img src="{{ url_for('static', filename='images/video.svg') }}" alt="Video" style="height: 18px; filter: brightness(0) invert(1);">
-                <span data-i18n="jumpToTimestamp">விரிவுரைக்குச் செல்</span>
+                <span data-i18n="jumpToTimestamp">Jump to Lecture</span>
             </a>
         </div>
         <div class="sideboard shadow-sm rounded border" id="sideee">

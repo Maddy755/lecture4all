@@ -46,23 +46,37 @@ def index():
     
 
 def post_to_db(query):
-    db_env_url = 'http://db-env:7001/app/process_query'
-    response = requests.post(db_env_url, json={'query': query})
-    return response
+    db_env_url = os.environ.get('DB_ENV_URL', 'http://db-env:7001/app/process_query')
+    try:
+        response = requests.post(db_env_url, json={'query': query}, timeout=30)
+        return response
+    except requests.exceptions.RequestException as e:
+        print(f"Error connecting to db-env at {db_env_url}: {e}")
+        return None
 
 def handle_query(query):
     if not query:
         return {'error': 'No query provided'}, 400
     response = post_to_db(query)
+    if response is None:
+        error_info = {
+            'error': 503,
+            'status_code': 503,
+            'response_content': 'Backend search service (db-env) is currently unavailable or starting up.'
+        }
+        return error_info, 503
     if response.status_code != 200:
         error_info = {
             'error': response.status_code,
             'status_code': response.status_code,
-            'response_content': response.content.decode('utf-8')
+            'response_content': response.content.decode('utf-8', errors='replace')
         }
         return error_info, 500
-    response = response.json()
-    json_data = json.loads(response)
+    response_data = response.json()
+    if isinstance(response_data, str):
+        json_data = json.loads(response_data)
+    else:
+        json_data = response_data
     return json_data, 200
 
 @app.route('/shorts')

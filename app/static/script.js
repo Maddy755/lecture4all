@@ -59,17 +59,18 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!SpeechRecognition) {
         if (warningDiv) warningDiv.style.display = 'block';
     } else {
-        const recognition = new SpeechRecognition();
-        
-        // Pick language matching current i18n
-        const currentLang = (window.i18n && window.i18n.currentLang) ? window.i18n.currentLang : 'ta';
+        // Pick language matching current translation manager
+        const currentLang = (window.translationManager && window.translationManager.currentTarget)
+            ? window.translationManager.currentTarget
+            : 'en';
         const langMap = {
+            en: 'en-US',
+            nl: 'nl-NL',
             ta: 'ta-IN',
             ml: 'ml-IN',
-            hi: 'hi-IN',
-            en: 'en-US'
+            hi: 'hi-IN'
         };
-        recognition.lang = langMap[currentLang] || 'ta-IN';
+        recognition.lang = langMap[currentLang] || 'en-US';
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
         window.lectureVoiceRecognition = recognition;

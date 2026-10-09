@@ -25,19 +25,29 @@ client = chromadb.HttpClient(host="chromadb", port=8000)
 use_ef = get_embedding_function()
 
 collection_name = "w4a-v2"
-collection = client.get_collection(name=collection_name, embedding_function=use_ef)
+collection = client.get_or_create_collection(name=collection_name, embedding_function=use_ef)
 
-def querry_text(text,n_results):
-    result = collection.query(
-        query_texts=text,
-        n_results=n_results
-    )
-    return result
+def querry_text(text, n_results):
+    try:
+        count = collection.count()
+        if count == 0:
+            return {"ids": [[]], "metadatas": [[]], "documents": [[]]}
+        n_results = min(n_results, count)
+        result = collection.query(
+            query_texts=text,
+            n_results=n_results
+        )
+        return result
+    except Exception as e:
+        print(f"Error querying chroma: {e}")
+        return {"ids": [[]], "metadatas": [[]], "documents": [[]]}
 
 def get_querry_result(text):
     formatted_result = []
     n_results = 50
     result = querry_text(text, n_results)
+    if not result or not result.get("ids") or len(result["ids"][0]) == 0:
+        return formatted_result
     length = len(result["ids"][0])
     for i in range(length):
         nr = i+1

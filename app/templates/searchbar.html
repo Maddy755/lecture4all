@@ -3,7 +3,10 @@
           data-shorts-url="{{ url_for('shorts') }}" data-searchresults-url="{{ url_for('searchresults') }}">
         <div class="lf-search-inner">
             <span class="lf-search-prefix" aria-hidden="true">
-                <img src="{{ url_for('static', filename='images/search.svg') }}" alt="" class="lf-search-prefix-icon">
+                <svg class="lf-search-prefix-svg" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 15C12.3137 15 15 12.3137 15 9C15 5.68629 12.3137 3 9 3C5.68629 3 3 5.68629 3 9C3 12.3137 5.68629 15 9 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M17 17L13.25 13.25" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
             </span>
             <input
                 class="lf-search-field notranslate"
@@ -12,17 +15,26 @@
                 type="search"
                 name="query"
                 value="{{ query if query else '' }}"
-                placeholder="விரிவுரையில் ஒரு தலைப்பைத் தேடுங்கள்..."
-                aria-label="Search within translated lecture transcripts"
+                placeholder="Search topics across lectures (e.g., Sorting algorithms, Machine learning)..."
+                aria-label="Search within lecture transcripts"
                 autocomplete="off"
                 spellcheck="false">
-            <button class="lf-mic-btn" id="micro-btn" type="button" title="Voice Search" aria-label="Voice Search">
-                <img src="{{ url_for('static', filename='images/microphone.svg') }}" alt="Voice" class="lf-mic-icon">
-            </button>
-            <button class="lf-search-btn" type="submit" id="searchSubmitBtn">
-                Search
-                <span class="lf-search-btn-arrow" aria-hidden="true">→</span>
-            </button>
+
+            <div class="lf-search-actions">
+                <button class="lf-mic-btn" id="micro-btn" type="button" title="Voice Search (multilingual)" aria-label="Voice Search">
+                    <span class="lf-mic-pulse-ring"></span>
+                    <svg class="lf-mic-svg" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 2.5C8.61929 2.5 7.5 3.61929 7.5 5V9.5C7.5 10.8807 8.61929 12 10 12C11.3807 12 12.5 10.8807 12.5 9.5V5C12.5 3.61929 11.3807 2.5 10 2.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M4.5 8.5V9.5C4.5 12.5376 6.96243 15 10 15C13.0376 15 15.5 12.5376 15.5 9.5V8.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M10 15V18M7.5 18H12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+
+                <button class="lf-search-btn" type="submit" id="searchSubmitBtn">
+                    <span>Search</span>
+                    <span class="lf-search-btn-badge" aria-hidden="true">↵</span>
+                </button>
+            </div>
         </div>
     </form>
 </div>
