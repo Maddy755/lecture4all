@@ -11,16 +11,6 @@ client = chromadb.HttpClient(host=host , port=8000)
 use_ef = ef.get_embedding_function()
 
 collection_name = input("Enter the collection name: ")
-video_dir = "/transcription/videos"
-
-local_video_files = {}
-
-if os.path.exists(video_dir):
-    for filename in os.listdir(video_dir):
-        name, extension = os.path.splitext(filename)
-
-        if extension.lower() in [".mp4", ".webm"]:
-            local_video_files[name] = filename
 if not collection_name in client.list_collections():
     client.create_collection(collection_name)
 collection = client.get_collection(name=collection_name, embedding_function=use_ef)
@@ -30,10 +20,7 @@ def add_transcript(transcript_json):
     title = transcript_json["title"]
     speaker = transcript_json["speaker"]
     date = transcript_json["date"]
-    m3u8_url = transcript_json.get("m3u8", "")
-
-    if video_id in local_video_files:
-        m3u8_url = f"/video-file/{local_video_files[video_id]}"
+    m3u8_url = transcript_json["m3u8"]
     category = transcript_json["category"]
     thumbnail_url = transcript_json["thumbnail"]
     base_metadata = {

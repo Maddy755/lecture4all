@@ -13,36 +13,18 @@ const PAUSE = 4;
 
 const thisVideo = getVideo();
 
-function changeSrc(videoUrl) {
-    if (!videoUrl) {
-        console.error("No video URL provided");
-        return;
-    }
-
-    const cleanUrl = videoUrl.split('?')[0].toLowerCase();
-
-    // Local MP4 / WebM videos
-    if (cleanUrl.endsWith('.mp4') || cleanUrl.endsWith('.webm')) {
-        customVideo.src = videoUrl;
-        customVideo.load();
-        return;
-    }
-
-    // HLS streams
+function changeSrc(videoUrl) 
+{
     if (customVideo.canPlayType('application/vnd.apple.mpegurl')) {
         customVideo.src = videoUrl;
-    }
-    else if (Hls.isSupported()) {
+    } else if (Hls.isSupported()) {
         const hls = new Hls();
-
         hls.loadSource(videoUrl);
         hls.attachMedia(customVideo);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-            // Existing HLS behavior
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            // auszuführen wenn geladen evtl loadedmetadata hier rein
         });
-    }
-    else {
+    } else {
         alert('Dein Browser unterstützt leider keine Wiedergabe von HLS-Streams.');
     }
 }
@@ -157,7 +139,7 @@ fullscreenBtn.addEventListener('click', () => {
     var UserAgent = navigator.userAgent.toLowerCase();
     if (UserAgent.search(/(iphone|ipod|opera mini|fennec|palm|blackberry|android|symbian|series60)/) > -1) {
         customVideo.webkitEnterFullscreen(); // iOS-spezifische Methode
-    }
+    } 
     // Auf Desktop: Standard-Fullscreen-API nutzen
     else if (!document.fullscreenElement) {
         customVideo.requestFullscreen();
@@ -229,7 +211,7 @@ const settingsMenu = document.getElementById('settings-menu');
 const subtitleLanguage = document.getElementById('subtitle-language');
 let menuTimeout;
 
-subtitleBtn.addEventListener('click', function (e) {
+subtitleBtn.addEventListener('click', function(e) {
     this.classList.toggle('active');
     if (subtitleTrack.mode === 'showing') {
         subtitleTrack.mode = 'hidden';
@@ -241,20 +223,20 @@ subtitleBtn.addEventListener('click', function (e) {
         resetMenuTimeout();
     }
 });
-settingsMenu.addEventListener('mouseover', function (e) {
+settingsMenu.addEventListener('mouseover', function(e) {
     e.stopPropagation();
     resetMenuTimeout();
 });
-settingsMenu.addEventListener('click', function (e) {
+settingsMenu.addEventListener('click', function(e) {
     e.stopPropagation();
     resetMenuTimeout();
 });
 
-subtitleLanguage.addEventListener('click', function (e) {
+subtitleLanguage.addEventListener('click', function(e) {
     e.stopPropagation();
     resetMenuTimeout();
 });
-subtitleLanguage.addEventListener('change', function (e) {
+subtitleLanguage.addEventListener('change', function(e) {
     switch (this.value) {
         case 'de':
             subtitleTrack.mode = 'hidden';
@@ -271,7 +253,7 @@ subtitleLanguage.addEventListener('change', function (e) {
             break;
     }
 });
-
+    
 function resetMenuTimeout() {
     clearTimeout(menuTimeout);
     menuTimeout = setTimeout(hideMenu, 4000); // 4000ms = nach 4 Sekunden schließen
@@ -286,24 +268,26 @@ async function checkSubsAvailable() {
         const response = await fetch(`/api/convert_srt_to_vtt?srt_path=${thisVideo.ger_sub}`, {
             method: 'HEAD'
         });
-        if (!response.ok) {
+        if(!response.ok)
+        {
             const germanOption = subtitleLanguage.querySelector('option[value="de"]');
             germanOption.disabled = true;
         }
     }
-    catch (e) {
+    catch(e){
         //...
     }
     try {
         const response = await fetch(`/api/convert_srt_to_vtt?srt_path=${thisVideo.eng_sub}`, {
             method: 'HEAD'
         });
-        if (!response.ok) {
+        if(!response.ok)
+        {
             const englishOption = subtitleLanguage.querySelector('option[value="en"]');
             englishOption.disabled = true;
         }
     }
-    catch (e) {
+    catch(e){
         //...
     }
 }

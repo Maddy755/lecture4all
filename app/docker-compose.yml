@@ -11,7 +11,6 @@ services:
       - ./db/src:/src
       - ./db:/db
       - ${TRANSACTION_PATH}:/processed_transcripts
-      - ../transcription/videos:/transcription/videos
     ports:
       - "7001:7001"
  #   entrypoint: [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=5000", "--debug"]
