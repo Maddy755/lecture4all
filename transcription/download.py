@@ -46,14 +46,28 @@ def download_video(video_url):
         return e
 
 def main():
-    start = int(sys.argv[1])
-    end = int(sys.argv[2])
+    if len(sys.argv) < 2:
+        print("Usage: python download.py <id1> [id2 ...]")
+        return
+
+    ids = []
+    if len(sys.argv) == 2:
+        ids = [int(sys.argv[1])]
+    elif len(sys.argv) == 3 and int(sys.argv[1]) <= int(sys.argv[2]):
+        start = int(sys.argv[1])
+        end = int(sys.argv[2])
+        ids = list(range(start, end + 1))
+    else:
+        ids = [int(arg) for arg in sys.argv[1:]]
+
     count = 0
     err = 0
-    for i in range(start, end + 1):
+    for i in ids:
         link = f"https://lecture2go.uni-hamburg.de/l2go/-/get/v/{i}"
+        print(f"Downloading video {i}...")
         e = download_video(link)
         if e:
+            print(f"Error downloading {i}: {e}")
             err += 1
         else:
             count += 1
