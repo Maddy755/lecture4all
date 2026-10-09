@@ -1,22 +1,76 @@
-<nav class="navbar navbar-expand navbar-light fixed-top">
-    <a class="navbar-brand" href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='images/whisper_icon.png') }}" alt="Logo" style="height: 40px;"></a>
-    <a class ="whisper" href="{{ url_for('index') }}">Lecture4All</a>
-  
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+<nav class="lf-nav" id="mainNav">
+    <div class="lf-nav-inner">
+        <!-- Brand -->
+        <a class="lf-brand" href="{{ url_for('index') }}">
+            <img src="{{ url_for('static', filename='images/whisper_icon.png') }}" alt="Lecture4All" class="lf-brand-logo">
+            <span class="lf-brand-name">Lecture4All</span>
+        </a>
+
+        <!-- Compact search (non-homepage only) -->
         {% if request.path != '/' and request.path != '/index' %}
+        <div class="lf-nav-search">
             {% include "searchbar.html" %}
+        </div>
         {% endif %}
-        <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('help') }}">Help</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('about') }}">About</a>
-            </li>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" id="shorts"> <!-- maybe wieder hidden? -->
-                <label class="form-check-label" for="shorts">Shorts</label>
+
+        <!-- Right controls -->
+        <div class="lf-nav-right">
+            <!-- Search Language Selector -->
+            <div class="lf-lang-bar" role="region" aria-label="Search Language">
+                <span class="lf-lang-icon" aria-hidden="true">🌐</span>
+                <span class="lf-lang-source">Search in:</span>
+                <div class="lf-lang-targets" role="tablist" aria-label="Select target language">
+                    <button type="button" class="lf-lang-btn" data-lang="en" role="tab" aria-selected="false" title="English">
+                        <span>English</span>
+                    </button>
+                    <button type="button" class="lf-lang-btn" data-lang="nl" role="tab" aria-selected="false" title="Nederlands">
+                        <span>Nederlands</span>
+                    </button>
+                    <button type="button" class="lf-lang-btn" data-lang="ta" role="tab" aria-selected="false" title="Tamil">
+                        <span class="notranslate" translate="no">தமிழ்</span>
+                    </button>
+                    <button type="button" class="lf-lang-btn" data-lang="ml" role="tab" aria-selected="false" title="Malayalam">
+                        <span class="notranslate" translate="no">മലയാളം</span>
+                    </button>
+                    <button type="button" class="lf-lang-btn" data-lang="hi" role="tab" aria-selected="false" title="Hindi">
+                        <span class="notranslate" translate="no">हिन्दी</span>
+                    </button>
+                </div>
             </div>
-        </ul>
+
+            <!-- Nav Links -->
+            <nav class="lf-navlinks" aria-label="Site navigation">
+                <a class="lf-navlink" href="{{ url_for('index') }}">Home</a>
+                <a class="lf-navlink" href="{{ url_for('help') }}">Help</a>
+                <a class="lf-navlink" href="{{ url_for('about') }}">About</a>
+            </nav>
+
+            <!-- Shorts Toggle -->
+            <div class="lf-shorts-toggle" title="Toggle Shorts View">
+                <input class="lf-toggle-input" type="checkbox" role="switch" id="shorts">
+                <label class="lf-toggle-label" for="shorts">Shorts</label>
+            </div>
+
+            <!-- Mobile menu button -->
+            <button class="lf-nav-mobile-btn navbar-toggler border-0 shadow-none" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#mobileNav"
+                    aria-controls="mobileNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
     </div>
-  </nav>
+
+    <!-- Mobile nav collapse -->
+    <div class="collapse lf-mobile-nav" id="mobileNav">
+        <div class="lf-mobile-nav-inner">
+            {% if request.path != '/' and request.path != '/index' %}
+            <div class="lf-mobile-search">{% include "searchbar.html" %}</div>
+            {% endif %}
+            <div class="lf-mobile-links">
+                <a class="lf-navlink" href="{{ url_for('index') }}">Home</a>
+                <a class="lf-navlink" href="{{ url_for('help') }}">Help</a>
+                <a class="lf-navlink" href="{{ url_for('about') }}">About</a>
+            </div>
+        </div>
+    </div>
+</nav>

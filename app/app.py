@@ -4,7 +4,7 @@
 @app.py
 """
 
-from flask import Flask, render_template, request, jsonify, session, Response
+from flask import Flask, render_template, request, jsonify, session, Response, send_from_directory
 import requests
 import os
 import json
@@ -15,6 +15,7 @@ app = Flask(__name__, template_folder='templates')
 app.secret_key = 'secret_key'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # # ─── Record start time for every incoming request ───────────────────────────────
 # @app.before_request
@@ -45,23 +46,37 @@ def index():
     
 
 def post_to_db(query):
-    db_env_url = 'http://db-env:7001/app/process_query'
-    response = requests.post(db_env_url, json={'query': query})
-    return response
+    db_env_url = os.environ.get('DB_ENV_URL', 'http://db-env:7001/app/process_query')
+    try:
+        response = requests.post(db_env_url, json={'query': query}, timeout=30)
+        return response
+    except requests.exceptions.RequestException as e:
+        print(f"Error connecting to db-env at {db_env_url}: {e}")
+        return None
 
 def handle_query(query):
     if not query:
         return {'error': 'No query provided'}, 400
     response = post_to_db(query)
+    if response is None:
+        error_info = {
+            'error': 503,
+            'status_code': 503,
+            'response_content': 'Backend search service (db-env) is currently unavailable or starting up.'
+        }
+        return error_info, 503
     if response.status_code != 200:
         error_info = {
             'error': response.status_code,
             'status_code': response.status_code,
-            'response_content': response.content.decode('utf-8')
+            'response_content': response.content.decode('utf-8', errors='replace')
         }
         return error_info, 500
-    response = response.json()
-    json_data = json.loads(response)
+    response_data = response.json()
+    if isinstance(response_data, str):
+        json_data = json.loads(response_data)
+    else:
+        json_data = response_data
     return json_data, 200
 
 @app.route('/shorts')
@@ -112,5 +127,9 @@ def convert_srt_to_vtt():
         )
     except Exception as e:
         return str(e), 404
+
+@app.route('/videos/<path:filename>')
+def serve_video(filename):
+    return send_from_directory('/transcription/videos', filename)
 
 print('starting...')

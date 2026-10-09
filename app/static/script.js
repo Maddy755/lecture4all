@@ -1,3 +1,5 @@
+// Lecture4All Main Script - Multilingual Voice Search, Shorts Mode, Dynamic Cards
+
 // Apply the switch state as soon as possible to avoid flicker
 (function () {
     const savedState = localStorage.getItem("shortsSwitch");
@@ -5,7 +7,7 @@
     const switchElement = document.getElementById("shorts");
     if (switchElement) {
         switchElement.checked = isChecked;
-        switchElement.classList.remove("hidden"); // Remove the hidden class
+        switchElement.classList.remove("hidden");
     }
 })();
 
@@ -14,15 +16,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const textElement = document.getElementById("shortsViewInfo");
     const searchForm = document.getElementById("searchForm");
 
-    // Function to update the visibility of the paragraph
     function updateShortsViewInfo(isChecked) {
         if (textElement) {
             textElement.style.display = isChecked ? "block" : "none";
         }
-        updateFormAction(isChecked); // Update the form action
+        updateFormAction(isChecked);
     }
 
-    // Function to update the form action
     function updateFormAction(isChecked) {
         if (searchForm) {
             const shortsUrl = searchForm.getAttribute('data-shorts-url');
@@ -31,14 +31,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Load saved state from localStorage
     const savedState = localStorage.getItem("shortsSwitch");
     const isChecked = savedState === "true";
     if (switchElement) {
         switchElement.checked = isChecked;
         updateShortsViewInfo(isChecked);
 
-        // Event listener to toggle visibility and save state
         switchElement.addEventListener("change", function () {
             localStorage.setItem("shortsSwitch", switchElement.checked);
             updateShortsViewInfo(switchElement.checked);
@@ -48,130 +46,173 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
     const microButton = document.getElementById('micro-btn');
-    const fertig = document.querySelector(".roundButton");
-    const schließen = document.getElementById('schließen');
     const audioPopup = document.getElementById('audioPopup');
     const searchForm = document.getElementById('searchForm');
     const loadingPopup = document.getElementById('loadingPopup');
     const warningDiv = document.getElementById('speech-recognition-warning');
+    const voiceDoneBtn = document.getElementById('voiceDoneBtn');
+    const voiceCancelBtn = document.getElementById('voiceCancelBtn');
 
-    let stream;
-    let recorder;
+    let audioStream = null;
 
-    // Use a variable for the constructor
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
         if (warningDiv) warningDiv.style.display = 'block';
-        return; // Stop further execution if not supported
-    }
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'de-DE';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    } else {
+        // Pick language matching current translation manager
+        const currentLang = (window.translationManager && window.translationManager.currentTarget)
+            ? window.translationManager.currentTarget
+            : 'en';
+        const langMap = {
+            en: 'en-US',
+            nl: 'nl-NL',
+            ta: 'ta-IN',
+            ml: 'ml-IN',
+            hi: 'hi-IN'
+        };
+        recognition.lang = langMap[currentLang] || 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        window.lectureVoiceRecognition = recognition;
 
-    microButton.addEventListener("click", async () => {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recorder = new MediaRecorder(stream);
-        audioPopup.style.display = 'flex';
-        recognition.start();
-    });
-
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        console.log('Erkanntes Wort:', transcript);
-        document.querySelector('input[name="query"]').value = transcript;
-        document.getElementById('searchForm').submit();
-    };
-
-    recognition.onerror = (event) => {
-        console.error('Fehler bei der Spracherkennung:', event.error);
-    };
-
-    recognition.onend = () => {
-        console.log('Spracherkennung beendet.');
-    };
-
-    fertig.addEventListener('click', () => {
-        stream.getTracks().forEach(track => track.stop());
-        recognition.stop();
-    });
-
-    schließen.addEventListener("click", () => {
-        stream.getTracks().forEach(track => track.stop());
-        recognition.stop();
-        audioPopup.style.display = 'none';
-    });
-
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            stream.getTracks().forEach(track => track.stop());
-            recognition.stop();
-            audioPopup.style.display = 'none';
+        if (microButton) {
+            microButton.addEventListener("click", async () => {
+                try {
+                    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    if (audioPopup) audioPopup.style.display = 'flex';
+                    recognition.start();
+                } catch(err) {
+                    console.warn("Microphone access not granted or failed", err);
+                    if (audioPopup) audioPopup.style.display = 'flex';
+                    recognition.start();
+                }
+            });
         }
-    });
 
-    searchForm.addEventListener('submit', function(event) {
-        event.preventDefault(); 
-        loadingPopup.style.display = 'flex';
-        setTimeout(function() {
-            searchForm.submit(); // Submit the form after 3 seconds
-        }, 1000);
-    });
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const queryInput = document.getElementById('query');
+            if (queryInput) queryInput.value = transcript;
+            stopMediaStream();
+            if (audioPopup) audioPopup.style.display = 'none';
+            if (searchForm) searchForm.submit();
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            stopMediaStream();
+            if (audioPopup) audioPopup.style.display = 'none';
+        };
+
+        recognition.onend = () => {
+            stopMediaStream();
+        };
+
+        function stopMediaStream() {
+            if (audioStream) {
+                audioStream.getTracks().forEach(track => track.stop());
+                audioStream = null;
+            }
+        }
+
+        if (voiceDoneBtn) {
+            voiceDoneBtn.addEventListener('click', () => {
+                stopMediaStream();
+                try { recognition.stop(); } catch(e){}
+                if (audioPopup) audioPopup.style.display = 'none';
+            });
+        }
+
+        if (voiceCancelBtn) {
+            voiceCancelBtn.addEventListener('click', () => {
+                stopMediaStream();
+                try { recognition.abort(); } catch(e){}
+                if (audioPopup) audioPopup.style.display = 'none';
+            });
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && audioPopup && audioPopup.style.display === 'flex') {
+                stopMediaStream();
+                try { recognition.abort(); } catch(e){}
+                audioPopup.style.display = 'none';
+            }
+        });
+    }
+
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(event) {
+            const queryInput = document.getElementById('query');
+            if (!queryInput || !queryInput.value.trim()) {
+                event.preventDefault();
+                return;
+            }
+            if (loadingPopup) loadingPopup.style.display = 'flex';
+        });
+    }
 });
+
 function changePlaceholder(text) {
-    document.getElementById('query').placeholder = text;
+    const input = document.getElementById('query');
+    if (input && text) {
+        input.placeholder = text;
+    }
 }
 
-// Video view:
+// Video Card Builder for "Other Lectures"
 function createVideoCard(video, videolink) {
-
     const colDiv = document.createElement('div');
-    colDiv.classList.add('col', 'mb-4');
+    colDiv.classList.add('col');
 
     const cardDiv = document.createElement('div');
-    cardDiv.classList.add('card');
+    cardDiv.classList.add('card', 'h-100', 'shadow-sm', 'border');
 
-    // Erstelle den Link (a-Element)
     const link = document.createElement('a');
     link.href = videolink;
+    link.classList.add('position-relative', 'd-block');
 
     const img = document.createElement('img');
     img.src = video.thumbnail_url;
-    img.alt = 'video';
-    img.classList.add('card-img-top');
+    img.alt = video.title || 'Lecture';
+    img.classList.add('card-img-top', 'object-fit-cover');
+    img.style.aspectRatio = '16/9';
     link.appendChild(img);
 
     const cardBodyDiv = document.createElement('div');
-    cardBodyDiv.classList.add('card-body');
+    cardBodyDiv.classList.add('card-body', 'p-3', 'd-flex', 'flex-column', 'justify-content-between');
 
-    const title = document.createElement('h5');
-    title.classList.add('card-title');
-    title.textContent = shortenTextIfNecessary(video.title, 70);
+    const title = document.createElement('h6');
+    title.classList.add('card-title', 'mb-2', 'fw-bold', 'text-dark');
+    title.textContent = shortenTextIfNecessary(video.title || `Lecture ${video.video_id}`, 60);
 
-    const speaker = document.createElement('p');
-    speaker.classList.add('card-text');
-    speaker.id = 'vspeaker';
-    speaker.textContent = video.speaker;
+    const metaDiv = document.createElement('div');
+    metaDiv.classList.add('small', 'text-muted');
 
-    const date = document.createElement('p');
-    date.classList.add('card-text');
-    const dateSmall = document.createElement('small');
-    dateSmall.classList.add('text-muted');
-    dateSmall.textContent = video.date;
-    date.appendChild(dateSmall);
+    if (video.speaker) {
+        const speaker = document.createElement('div');
+        speaker.textContent = video.speaker;
+        metaDiv.appendChild(speaker);
+    }
+
+    if (video.date) {
+        const dateSmall = document.createElement('small');
+        dateSmall.classList.add('text-muted');
+        dateSmall.textContent = video.date;
+        metaDiv.appendChild(dateSmall);
+    }
 
     cardBodyDiv.appendChild(title);
-    cardBodyDiv.appendChild(speaker);
-    cardBodyDiv.appendChild(date);
+    cardBodyDiv.appendChild(metaDiv);
 
     cardDiv.appendChild(link);
     cardDiv.appendChild(cardBodyDiv);
-
     colDiv.appendChild(cardDiv);
 
     return colDiv;
 }
+
 function shortenTextIfNecessary(text, maxLength) {
+    if (!text) return '';
     if (text.length > maxLength) {
         return text.slice(0, maxLength - 2) + '...';
     }

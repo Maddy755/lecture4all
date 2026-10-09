@@ -1,13 +1,60 @@
 {% extends "base.html" %}
 
-{% block title %}Lecture4All - About{% endblock %}
+{% block title %}Lecture4All - About the Project{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="text-box p-3">
-        <h2 class="mb-4">About</h2>
-        <p class="mb-3">Lecture4All wurde als Teil von Project AI - Applications with Artificial Intelligence im Wintersemester 2024/25 erstellt.</p> 
-        <p>Ziel des Projektes war es, via Spracheingabe Textstellen in Lecture2Go Videos zu finden.</p>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            <div class="card border shadow-sm p-4 p-md-5 bg-white rounded-3">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-3 small">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">About</li>
+                    </ol>
+                </nav>
+
+                <h1 class="h3 fw-bold mb-3">About Lecture4All</h1>
+                <p class="lead fs-6 text-muted mb-4">
+                    Lecture4All is an intelligent educational video retrieval platform providing <strong>universal cross-lingual semantic search</strong> across academic lectures in any language.
+                </p>
+
+                <div class="mb-4">
+                    <h5 class="h6 fw-bold mb-2">Universal Any-to-Any Cross-Lingual Architecture</h5>
+                    <p class="text-muted small">
+                        Lectures can be delivered and recorded in <strong>any supported language</strong> &mdash; English, Dutch (Nederlands), Tamil (தமிழ்), Malayalam (മലയാളം), or Hindi (हिन्दी). Spoken audio is transcribed with word-level timestamps using Whisper. Both the transcripts and student search queries are mapped into a shared 512-dimensional multilingual vector space using the Universal Sentence Encoder. This allows students to search naturally in any language and instantly retrieve relevant lecture segments regardless of the video's original spoken tongue.
+                    </p>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded text-center">
+                            <div class="fs-4 mb-1">🌐</div>
+                            <div class="fw-semibold small">Multilingual Catalog</div>
+                            <div class="text-muted smaller">Lectures in EN, NL, TA, ML, and HI</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded text-center">
+                            <div class="fs-4 mb-1">🧠</div>
+                            <div class="fw-semibold small">Cross-Lingual Vectors</div>
+                            <div class="text-muted smaller">Universal Sentence Encoder 512-D space</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded text-center">
+                            <div class="fs-4 mb-1">⚡</div>
+                            <div class="fw-semibold small">Sub-Second Seeking</div>
+                            <div class="text-muted smaller">Direct timestamp jump in synchronized player</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-top pt-3 text-muted small">
+                    <p class="mb-0">Lecture4All &bull; Dedicated to accessible, multilingual digital learning.</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

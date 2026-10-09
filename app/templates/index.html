@@ -1,18 +1,235 @@
 {% extends "base.html" %}
 
-{% block title %}Lecture4All{% endblock %}
+{% block title %}Lecture4All — Universal Cross-Lingual Academic Lecture Search{% endblock %}
 
 {% block content %}
-    <div class="d-flex flex-column align-items-center margin-top mb-1">
-        <h2 class="mb-4">Was möchtest du erklärt haben?</h2>
-        <div id="speech-recognition-warning" class="alert alert-warning" style="display: none;">
-            Hinweis: die Spracherkennung wird von Ihrem Browser leider nicht unterstützt.
+
+<!-- Ambient background glow elements -->
+<div class="lf-ambient-glow lf-glow-1" aria-hidden="true"></div>
+<div class="lf-ambient-glow lf-glow-2" aria-hidden="true"></div>
+
+<!-- =====================================================================
+     HERO SECTION — Two-column modern layout
+     ===================================================================== -->
+<section class="lf-hero">
+    <div class="lf-container">
+        <div class="lf-hero-grid">
+
+            <!-- LEFT: Headline, Description & Search -->
+            <div class="lf-hero-left">
+                <!-- Status & Direction Eyebrow -->
+                <div class="lf-eyebrow">
+                    <span class="lf-live-indicator" aria-hidden="true">
+                        <span class="lf-live-dot"></span>
+                        <span class="lf-live-ping"></span>
+                    </span>
+                    <span class="lf-eyebrow-target notranslate" id="heroEyebrowTarget" translate="no">Cross-Lingual Search · Any Language ⇄ Any Language</span>
+                </div>
+
+                <!-- Dynamic Headline bound to active language -->
+                <h1 class="lf-headline" id="heroHeadline">
+                    Search Across<br>
+                    <em class="lf-headline-em">Any Lecture</em><br>
+                    In Any Language
+                </h1>
+
+                <!-- Dynamic Subheadline -->
+                <p class="lf-hero-desc" id="heroDesc">
+                    Search academic lectures in English, Dutch, Tamil, Malayalam, or Hindi. Jump directly to the exact spoken second across the entire multilingual video catalog.
+                </p>
+
+                <!-- Speech Recognition Warning -->
+                <div id="speech-recognition-warning" class="lf-alert" style="display:none;">
+                    ⚠ Speech recognition is not supported by your browser.
+                </div>
+
+                <!-- PRIMARY SEARCH MODULE -->
+                <div class="lf-search-module">
+                    {% include "searchbar.html" %}
+                </div>
+
+                <!-- POPULAR SEARCHES / INSPIRATION CHIPS -->
+                <div class="lf-popular-section">
+                    <div class="lf-popular-header">
+                        <span class="lf-section-micro" id="sampleQueriesLabel">Try searching in English:</span>
+                        <span class="lf-popular-hint">Click any query to search instantly</span>
+                    </div>
+                    <div class="lf-popular-chips" id="sampleChipsContainer">
+                        <button type="button" class="lf-chip notranslate" translate="no"><span class="lf-chip-icon">🔍</span><span>Sorting algorithms</span></button>
+                        <button type="button" class="lf-chip notranslate" translate="no"><span class="lf-chip-icon">🔍</span><span>Binary search tree</span></button>
+                        <button type="button" class="lf-chip notranslate" translate="no"><span class="lf-chip-icon">🔍</span><span>Dynamic programming</span></button>
+                        <button type="button" class="lf-chip notranslate" translate="no"><span class="lf-chip-icon">🔍</span><span>Memory management</span></button>
+                        <button type="button" class="lf-chip notranslate" translate="no"><span class="lf-chip-icon">🔍</span><span>Artificial intelligence</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Interactive Translation Flow & Model Card -->
+            <div class="lf-hero-right" aria-hidden="true">
+                <div class="lf-flow-panel">
+                    <div class="lf-flow-header">
+                        <span class="lf-flow-badge">Universal Vector Pipeline</span>
+                        <span class="lf-flow-status">Any ⇄ Any</span>
+                    </div>
+
+                    <!-- Step 1: Multilingual Media -->
+                    <div class="lf-flow-block">
+                        <div class="lf-flow-block-head">
+                            <span class="lf-flow-icon">🎙️</span>
+                            <div class="lf-flow-label">MULTILINGUAL VIDEO CATALOG</div>
+                        </div>
+                        <div class="lf-flow-value">EN · NL · TA · ML · HI</div>
+                        <div class="lf-flow-sub">Global university lecture repository</div>
+                    </div>
+
+                    <div class="lf-flow-connector">
+                        <div class="lf-flow-line"></div>
+                        <div class="lf-flow-node">
+                            <span class="lf-flow-node-label">Whisper Sub-Second Timestamping</span>
+                        </div>
+                        <div class="lf-flow-line"></div>
+                    </div>
+
+                    <!-- Step 2: Shared Semantic Vector Space -->
+                    <div class="lf-flow-block">
+                        <div class="lf-flow-block-head">
+                            <span class="lf-flow-icon">🌐</span>
+                            <div class="lf-flow-label">SHARED SEMANTIC VECTOR SPACE</div>
+                        </div>
+                        <div class="lf-flow-langs">
+                            <span class="lf-flow-lang" data-lang="en">EN</span>
+                            <span class="lf-flow-lang-sep">·</span>
+                            <span class="lf-flow-lang" data-lang="nl">NL</span>
+                            <span class="lf-flow-lang-sep">·</span>
+                            <span class="lf-flow-lang notranslate" data-lang="ta" translate="no">தமிழ்</span>
+                            <span class="lf-flow-lang-sep">·</span>
+                            <span class="lf-flow-lang notranslate" data-lang="ml" translate="no">മലയാളം</span>
+                            <span class="lf-flow-lang-sep">·</span>
+                            <span class="lf-flow-lang notranslate" data-lang="hi" translate="no">हिन्दी</span>
+                        </div>
+                        <div class="lf-flow-sub">Universal Sentence Encoder (512-dim multilingual embedding)</div>
+                    </div>
+
+                    <div class="lf-flow-connector">
+                        <div class="lf-flow-line"></div>
+                        <div class="lf-flow-node">
+                            <span class="lf-flow-node-label">ChromaDB Cosine Similarity Match</span>
+                        </div>
+                        <div class="lf-flow-line"></div>
+                    </div>
+
+                    <!-- Step 3: Instant Timestamp -->
+                    <div class="lf-flow-block lf-flow-block--highlight">
+                        <div class="lf-flow-block-head">
+                            <span class="lf-flow-icon">⚡</span>
+                            <div class="lf-flow-label">EXACT TIMESTAMP RETRIEVAL</div>
+                        </div>
+                        <div class="lf-flow-timestamp">
+                            <span class="lf-flow-ts-dot"></span>
+                            <span class="lf-flow-ts-time">00:12:43</span>
+                            <span class="lf-flow-ts-tag">High Relevance</span>
+                        </div>
+                        <div class="lf-flow-sub">Plays synchronized video at the precise topic moment</div>
+                    </div>
+                </div>
+            </div>
+
         </div>
-        {% include "searchbar.html" %}
-        <p id="shortsViewInfo" class="hint-text">
-            Shorts View ist aktiviert. 
-            <img id="questionmark" src="{{ url_for('static', filename='images/questionmark.svg') }}" alt="Search" style="height: 20px;">
-            <span id="shorts-explanation" class="hint-text">Shorts View ist eine experimentelle Ansicht, die dir dabei helfen soll, schneller deine Frage zu beantworten. Probier's mal aus!</span>
-        </p>
-    </div> 
+    </div>
+</section>
+
+<!-- =====================================================================
+     SHORTS / DISCOVERY MODULE (Conditionally shown if toggled)
+     ===================================================================== -->
+<section class="lf-shorts-section" id="shortsViewInfo" style="display:none;">
+    <div class="lf-container">
+        <div class="lf-shorts-panel">
+            <div class="lf-shorts-left">
+                <div class="lf-section-micro">SHORTS MODE ACTIVE</div>
+                <h2 class="lf-shorts-title">Bite-sized lecture highlights</h2>
+                <p class="lf-shorts-desc">Experience 12-second translated clips directly answering your query in continuous autoplay.</p>
+            </div>
+            <div class="lf-shorts-right">
+                <div class="lf-shorts-status">
+                    <span class="lf-status-dot"></span>
+                    <span class="lf-status-label">Enabled</span>
+                </div>
+                <img id="questionmark" src="{{ url_for('static', filename='images/questionmark.svg') }}" alt="Help" class="lf-help-icon">
+                <span id="shorts-explanation" class="lf-hint-box">Shorts View presents sequential video clips matching your query.</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =====================================================================
+     EXPLORE A LECTURE DIRECTLY
+     ===================================================================== -->
+<section class="lf-explore-section">
+    <div class="lf-container">
+        <div class="lf-explore-card">
+            <div class="lf-explore-copy">
+                <div class="lf-section-micro">DIRECT LECTURE EXPLORER</div>
+                <h2 class="lf-explore-title">Jump to lecture by ID</h2>
+                <p class="lf-explore-desc">Have a specific lecture number? Enter the Lecture ID to view full timestamps and translations.</p>
+                <div class="lf-explore-suggestions">
+                    <span class="lf-explore-try-label">Try sample lectures:</span>
+                    <button type="button" class="lf-lecture-badge-btn" onclick="document.getElementById('directVideoId').value='19550'; document.getElementById('exploreForm').submit();">#19550</button>
+                    <button type="button" class="lf-lecture-badge-btn" onclick="document.getElementById('directVideoId').value='11058'; document.getElementById('exploreForm').submit();">#11058</button>
+                    <button type="button" class="lf-lecture-badge-btn" onclick="document.getElementById('directVideoId').value='20412'; document.getElementById('exploreForm').submit();">#20412</button>
+                </div>
+            </div>
+            <form action="{{ url_for('video') }}" method="get" class="lf-explore-form" id="exploreForm">
+                <div class="lf-explore-input-wrap">
+                    <span class="lf-explore-icon">🎬</span>
+                    <input type="text" name="video_id" class="lf-explore-input" id="directVideoId"
+                           placeholder="Enter Video ID (e.g. 19550)" required autocomplete="off">
+                    <button type="submit" class="lf-explore-btn">
+                        <span>Open Lecture</span>
+                        <span>→</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- =====================================================================
+     PIPELINE / ARCHITECTURE OVERVIEW
+     ===================================================================== -->
+<section class="lf-pipeline-section">
+    <div class="lf-container">
+        <div class="lf-pipeline-header">
+            <div class="lf-section-micro">UNIVERSAL SEARCH ARCHITECTURE</div>
+            <h3 class="lf-pipeline-headline">How Any-to-Any Cross-Lingual Search Works</h3>
+        </div>
+        <div class="lf-pipeline-grid">
+
+            <div class="lf-pipeline-card">
+                <div class="lf-pipe-card-number">01</div>
+                <div class="lf-pipe-card-icon">🎙️</div>
+                <h4 class="lf-pipe-card-title">Any-Language Lectures</h4>
+                <p class="lf-pipe-card-desc">Videos in English, Dutch, Tamil, Malayalam, or Hindi are automatically transcribed with word-level timestamps using Whisper.</p>
+                <div class="lf-pipe-card-tag">Multilingual Whisper AI</div>
+            </div>
+
+            <div class="lf-pipeline-card">
+                <div class="lf-pipe-card-number">02</div>
+                <div class="lf-pipe-card-icon">🧠</div>
+                <h4 class="lf-pipe-card-title">Unified Vector Space</h4>
+                <p class="lf-pipe-card-desc">Transcripts and search queries in any language are mapped to a shared 512-D vector space where semantic meanings match cross-lingually.</p>
+                <div class="lf-pipe-card-tag">Universal Sentence Encoder</div>
+            </div>
+
+            <div class="lf-pipeline-card">
+                <div class="lf-pipe-card-number">03</div>
+                <div class="lf-pipe-card-icon">⚡</div>
+                <h4 class="lf-pipe-card-title">Sub-Second Seeking</h4>
+                <p class="lf-pipe-card-desc">ChromaDB calculates cosine similarity between your query and speech segments, jumping straight to the exact second in the video.</p>
+                <div class="lf-pipe-card-tag">ChromaDB + HLS Player</div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
 {% endblock %}
