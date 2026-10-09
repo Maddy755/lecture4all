@@ -29,6 +29,12 @@ const resultsJS = getResultsJS();
 
     function changeSrc(videoUrl) 
     {
+        if (!videoUrl) return;
+        const isHls = videoUrl.includes('.m3u8') || videoUrl.includes('.smil');
+        if (!isHls) {
+            short.src = videoUrl;
+            return;
+        }
         if (short.canPlayType('application/vnd.apple.mpegurl')) {
             short.src = videoUrl;
         } else if (Hls.isSupported()) {

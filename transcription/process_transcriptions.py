@@ -35,6 +35,43 @@ def make_title(filename):
     return title.strip()
 
 
+def clean_repeated_chars(text):
+    if not text:
+        return ""
+    import re
+    return re.sub(r'(.)\1{3,}', r'\1', text)
+
+
+def remove_repetitive_ngrams_from_words(words, max_n=5, max_repeats=1):
+    result = list(words)
+    changed = True
+    while changed:
+        changed = False
+        for n in range(max_n, 0, -1):
+            i = 0
+            new_result = []
+            while i < len(result):
+                ngram = [clean_repeated_chars(w.get('text', '').strip()) for w in result[i:i+n]]
+                if len(ngram) < n or not any(ngram):
+                    new_result.extend(result[i:])
+                    break
+                repeat_count = 1
+                j = i + n
+                while j + n <= len(result) and [clean_repeated_chars(w.get('text', '').strip()) for w in result[j:j+n]] == ngram:
+                    repeat_count += 1
+                    j += n
+                if repeat_count > max_repeats:
+                    for _ in range(max_repeats):
+                        new_result.extend(result[i:i+n])
+                    i = j
+                    changed = True
+                else:
+                    new_result.extend(result[i:i+n])
+                    i += n
+            result = new_result
+    return result
+
+
 def process_transcript(filename):
 
     input_path = os.path.join(
@@ -76,7 +113,7 @@ def process_transcript(filename):
         return False
 
     # ---------------------------------------------------------
-    # Basic metadata
+    # Basic metadata defaults
     # ---------------------------------------------------------
 
     base_name = os.path.splitext(filename)[0]
@@ -87,18 +124,28 @@ def process_transcript(filename):
         video_id = base_name
 
     title = make_title(filename)
-
     speaker = "Unknown"
+    category = "General"
+    date = "Unknown"
+    url = f"https://lecture2go.uni-hamburg.de/l2go/-/get/v/{video_id}"
+    m3u8 = f"https://lecture2go.uni-hamburg.de/vod/_definst_/mp4:{video_id}.mp4/playlist.m3u8"
+    thumbnail = f"https://lecture2go.uni-hamburg.de/vod/_definst_/mp4:{video_id}.mp4/preview.jpg"
 
-    category = "Local Video"
-
-    date = ""
-
-    url = ""
-
-    m3u8 = ""
-
-    thumbnail = ""
+    meta_path = os.path.join("metadata", f"{video_id}_metadata.json")
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path, "r", encoding="utf-8") as mf:
+                m_list = json.load(mf)
+                m_data = m_list[0] if isinstance(m_list, list) and m_list else m_list
+                title = m_data.get("title", title)
+                speaker = m_data.get("speaker", speaker)
+                category = m_data.get("category", category)
+                date = m_data.get("date", date)
+                url = m_data.get("url", url)
+                m3u8 = m_data.get("m3u8", m3u8)
+                thumbnail = m_data.get("thumbnail", thumbnail)
+        except Exception as me:
+            print(f"Notice: could not load metadata from {meta_path}: {me}")
 
     detected_language = transcription.get(
         "language",
@@ -155,6 +202,8 @@ def process_transcript(filename):
             "words",
             []
         )
+        if words:
+            words = remove_repetitive_ngrams_from_words(words, max_n=5, max_repeats=1)
 
         # Some Whisper output may not contain
         # word-level timestamps.

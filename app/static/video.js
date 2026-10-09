@@ -28,6 +28,11 @@ if (!thisVideo) {
 function initVideoPage() {
     function changeSrc(videoUrl) {
         if (!videoUrl) return;
+        const isHls = videoUrl.includes('.m3u8') || videoUrl.includes('.smil');
+        if (!isHls) {
+            customVideo.src = videoUrl;
+            return;
+        }
         if (customVideo.canPlayType('application/vnd.apple.mpegurl')) {
             customVideo.src = videoUrl;
         } else if (typeof Hls !== 'undefined' && Hls.isSupported()) {
@@ -58,7 +63,15 @@ function initVideoPage() {
     const breadcrumbTitle = document.getElementById('breadcrumbVideoTitle');
     if (breadcrumbTitle) breadcrumbTitle.textContent = thisVideo.title || `Lecture ${thisVideo.video_id}`;
 
-    const langDisplay = thisVideo.language ? thisVideo.language : 'Multilingual';
+    const langMap = {
+        'ta': 'தமிழ் (Tamil)',
+        'ml': 'മലയാളം (Malayalam)',
+        'hi': 'हिन्दी (Hindi)',
+        'de': 'Deutsch (German)',
+        'en': 'English',
+        'nl': 'Nederlands'
+    };
+    const langDisplay = langMap[thisVideo.language] || thisVideo.language || 'Multilingual';
     const topBadge = document.getElementById('topVideoLangBadge');
     if (topBadge) topBadge.textContent = `🌐 ${langDisplay} Lecture`;
     const playerAudioBadge = document.getElementById('playerAudioLangBadge');

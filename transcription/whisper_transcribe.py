@@ -30,12 +30,14 @@ SUPPORTED_EXTENSIONS = {
 }
 
 
-def load_model(model_size="medium"):
-    print(f"Loading Whisper model: {model_size}")
+def load_model(model_size="base"):
+    import torch
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Loading Whisper model: {model_size} on {device}")
 
     model = whisper_timestamped.load_model(
         model_size,
-        device="cuda"
+        device=device
     )
 
     return model

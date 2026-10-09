@@ -22,7 +22,7 @@
                     <div class="row g-0">
                         <!-- Left: Thumbnail with duration/timestamp overlay -->
                         <div class="col-12 col-md-4 col-lg-3 position-relative lecture-thumb-col">
-                            <a href="{{ url_for('video', video_id=video.video_id) }}{% if top_chunk %}?t={{ top_start }}{% endif %}" class="d-block h-100 position-relative group">
+                            <a href="{{ url_for('video', video_id=video.video_id, t=top_start if top_chunk else None) }}" class="d-block h-100 position-relative group">
                                 <img src="{{ video.thumbnail_url }}" alt="{{ video.title }}" class="img-fluid w-100 h-100 object-fit-cover result-thumb-img">
                                 <div class="thumb-play-overlay d-flex align-items-center justify-content-center">
                                     <span class="play-circle-icon">
@@ -43,7 +43,7 @@
                                 <div>
                                     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
                                         <h2 class="h5 card-title mb-0">
-                                            <a href="{{ url_for('video', video_id=video.video_id) }}{% if top_chunk %}?t={{ top_start }}{% endif %}" class="text-decoration-none text-dark fw-bold hover-primary">
+                                            <a href="{{ url_for('video', video_id=video.video_id, t=top_start if top_chunk else None) }}" class="text-decoration-none text-dark fw-bold hover-primary">
                                                 {{ video.title }}
                                             </a>
                                         </h2>
@@ -94,7 +94,7 @@
                                     <div class="other-timestamps-row mb-3 d-flex flex-wrap align-items-center gap-1">
                                         <span class="small text-muted me-1">Other timestamps:</span>
                                         {% for c in video.chunks[1:5] %}
-                                            <a href="{{ url_for('video', video_id=video.video_id) }}?t={{ c.start }}" 
+                                            <a href="{{ url_for('video', video_id=video.video_id, t=c.start) }}" 
                                                class="btn btn-sm btn-outline-secondary py-0 px-2 font-monospace small" 
                                                title="{{ c.text }}">
                                                 ⏱ <span class="format-seconds" data-seconds="{{ c.start }}"></span>
@@ -109,7 +109,7 @@
                                     <span class="text-muted small">
                                         {{ video.chunks|length if video.chunks else 0 }} relevant timestamp{{ 's' if (video.chunks and video.chunks|length > 1) else '' }}
                                     </span>
-                                    <a href="{{ url_for('video', video_id=video.video_id) }}{% if top_chunk %}?t={{ top_start }}{% endif %}" 
+                                    <a href="{{ url_for('video', video_id=video.video_id, t=top_start if top_chunk else None) }}" 
                                        class="btn btn-dark btn-sm px-3 d-inline-flex align-items-center gap-1 fw-medium">
                                         <img src="{{ url_for('static', filename='images/play.svg') }}" alt="" style="width: 12px; filter: brightness(0) invert(1);">
                                         <span>Jump to timestamp</span>

@@ -4,7 +4,7 @@
 @app.py
 """
 
-from flask import Flask, render_template, request, jsonify, session, Response
+from flask import Flask, render_template, request, jsonify, session, Response, send_from_directory
 import requests
 import os
 import json
@@ -127,5 +127,9 @@ def convert_srt_to_vtt():
         )
     except Exception as e:
         return str(e), 404
+
+@app.route('/videos/<path:filename>')
+def serve_video(filename):
+    return send_from_directory('/transcription/videos', filename)
 
 print('starting...')
