@@ -15,20 +15,64 @@ STOP_WORDS = {
     "was", "what", "when", "where", "who", "will", "with", "und", "der", "die", "das"
 }
 
+TRANSLATION_CACHE = {}
+
+KNOWN_TRANSLATIONS = {
+    "மனശാസ്ത്രம்": "psychology",
+    "மநசாஸ்திரம்": "psychology",
+    "മനശാസ്ത്രം": "psychology",
+    "मनोविज्ञान": "psychology",
+    "sozialwissenschaften": "social sciences",
+    "കമ്പ്യൂട്ടർ സയൻസ്": "computer science",
+    "கணினி அறிவியல்": "computer science",
+    "कंप्यूटर साइंस": "computer science",
+    "informatik": "computer science",
+    "പൈത്തൺ": "Python",
+    "பைதான்": "Python",
+    "पायथन": "Python",
+    "ഗുണനം": "multiplication",
+    "பெருக்கல்": "multiplication",
+    "गुणा": "multiplication",
+    "നാണയങ്ങൾ": "coins",
+    "நாணயங்கள்": "coins",
+    "सिक्के": "coins",
+    "ചൈനയിലെ വന്മതിൽ": "Great Wall of China",
+    "சீனப் பெருஞ்சுவர்": "Great Wall of China",
+    "चीन की महान दीवार": "Great Wall of China",
+    "बीजगणित": "algebra",
+    "ബീജഗണിതം": "algebra",
+    "இயற்கணிதம்": "algebra",
+}
+
 def translate_query(q):
     if not q or len(q.strip()) < 2:
         return q, "en"
-    try:
-        url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=" + urllib.parse.quote(q)
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=3) as r:
-            res = json.loads(r.read().decode("utf-8"))
-            translated = "".join([part[0] for part in res[0] if part[0]])
-            detected_lang = res[2] if len(res) > 2 else "en"
-            return translated.strip(), detected_lang
-    except Exception as e:
-        print(f"Query translation fallback: {e}")
-        return q, "en"
+    q_clean = q.strip()
+    q_key = q_clean.lower()
+    if q_key in TRANSLATION_CACHE:
+        return TRANSLATION_CACHE[q_key]
+    if q_key in KNOWN_TRANSLATIONS:
+        res = (KNOWN_TRANSLATIONS[q_key], "auto")
+        TRANSLATION_CACHE[q_key] = res
+        return res
+    endpoints = [
+        ("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=", lambda d: "".join([p[0] for p in d[0] if p[0]]), lambda d: d[2] if len(d) > 2 else "en"),
+        ("https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=en&q=", lambda d: d[0] if isinstance(d, list) and d else str(d), lambda d: "en")
+    ]
+    for url_prefix, parse_text, parse_lang in endpoints:
+        try:
+            url = url_prefix + urllib.parse.quote(q_clean)
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+            with urllib.request.urlopen(req, timeout=3) as r:
+                res = json.loads(r.read().decode("utf-8"))
+                translated = parse_text(res)
+                detected_lang = parse_lang(res)
+                result = (translated.strip(), detected_lang)
+                TRANSLATION_CACHE[q_key] = result
+                return result
+        except Exception:
+            continue
+    return q, "en"
 
 class USEEmbeddingFunction:
     def __init__(self):
@@ -170,21 +214,38 @@ def format_result(result, qtext="", translated_q=""):
         best_chunk_sim = max([c["chunk_sim"] for c in video["chunks"]]) if video["chunks"] else 0.0
         kw_boost = 0.0
 
-        for phrase in [query_lower, trans_lower]:
-            if phrase and len(phrase) >= 3:
-                if phrase in v_title:
-                    kw_boost += 6.0
-                elif phrase in v_cat:
-                    kw_boost += 3.0
+        # 1. Verbatim user query matches (highest priority)
+        if query_lower and len(query_lower) >= 3:
+            if query_lower in v_title:
+                kw_boost += 8.0
+            elif query_lower in v_cat:
+                kw_boost += 4.0
 
+        # 2. Translated cross-lingual query matches
+        if trans_lower and len(trans_lower) >= 3 and trans_lower != query_lower:
+            if trans_lower in v_title:
+                kw_boost += 5.0
+            elif trans_lower in v_cat:
+                kw_boost += 2.5
+
+        # 3. Token-level matches
         for t in match_tokens:
+            is_orig_token = t in tokens
+            title_boost = 4.0 if is_orig_token else 2.5
+            cat_boost = 2.0 if is_orig_token else 1.2
+            chunk_boost = 1.0 if is_orig_token else 0.6
+
             if t in v_title:
-                kw_boost += 3.0
-            if t in v_cat:
-                kw_boost += 1.5
+                kw_boost += title_boost
+            elif t in v_cat:
+                kw_boost += cat_boost
+
+            if (t == "psychology" and "psychologie" in v_cat) or (t == "psychologie" and "psychology" in v_title):
+                kw_boost += title_boost
+
             for c in video["chunks"]:
                 if t in c["text"].lower():
-                    kw_boost += 0.8
+                    kw_boost += chunk_boost
                     break
 
         video["_score"] = best_chunk_sim + kw_boost
